@@ -1,0 +1,11 @@
+{
+  "extends": "/home/aaevi/projects/deepseek-harness/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "/home/aaevi/projects/deepseek-harness/vendor/cordis" }
+  ]
+}
