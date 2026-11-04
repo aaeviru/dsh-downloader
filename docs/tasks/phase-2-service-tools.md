@@ -47,3 +47,5 @@ pnpm vitest run packages/experimental/dsh-downloader/tests/service.spec.ts packa
 ## 硬约束
 
 不改 `scripts/`、`packages/bundle/`；不 import `@deepseek-ai/*` 的值（仅 `import type`）；不跑 git / pnpm install；不访问 NAS；不在日志或工具结果里输出 token。
+
+跟踪 issue：[#5](https://github.com/aaeviru/dsh-downloader/issues/5)

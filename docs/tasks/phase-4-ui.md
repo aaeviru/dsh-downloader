@@ -42,3 +42,5 @@ pnpm dsh web --patch apps/web/tests/downloader.overlay.yml   # 人工：浏览�
 ## 硬约束
 
 不改 `scripts/`、`packages/bundle/`（安装走 `plugin_manager`，不手写 profile `package.json`）；不用硬编码颜色/文案；不 import 其他插件的值；实验包只能靠 overlay 加载，不改正式 composition。
+
+跟踪 issue：[#7](https://github.com/aaeviru/dsh-downloader/issues/7)

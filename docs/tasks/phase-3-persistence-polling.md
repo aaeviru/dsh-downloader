@@ -38,3 +38,5 @@ pnpm vitest run packages/experimental/dsh-downloader/tests/store.spec.ts package
 ## 硬约束
 
 不新增数据库依赖（除非前置验证证明 storageDomain 不可用并获用户同意）；不在日志输出 token；轮询失败不得静默——每次失败要能被 UI 看到。
+
+跟踪 issue：[#6](https://github.com/aaeviru/dsh-downloader/issues/6)

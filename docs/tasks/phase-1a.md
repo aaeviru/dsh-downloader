@@ -110,3 +110,5 @@ pnpm --filter dsh-downloader run bundle
 
 - 每条命令的**原始输出**与退出码，一字不改；失败就把第一条错误原文抄回来。
 - 不要声称"已通过"而省略输出；沙箱挡住时如实说明是哪个命令被挡。
+
+跟踪 issue：[#2](https://github.com/aaeviru/dsh-downloader/issues/2)

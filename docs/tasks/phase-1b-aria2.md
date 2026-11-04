@@ -47,3 +47,5 @@ pnpm --filter dsh-downloader run bundle
 ## 硬约束
 
 不改 `scripts/`、`packages/bundle/`；不 import `@deepseek-ai/*` 的值；不跑 git / pnpm install；不访问真实 NAS；不用 `any` / `as unknown`；每个分支都要有用例（覆盖率按文件 100%）。
+
+跟踪 issue：[#3](https://github.com/aaeviru/dsh-downloader/issues/3)

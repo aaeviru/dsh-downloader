@@ -48,3 +48,5 @@ pnpm --filter dsh-downloader run bundle
 ## 硬约束
 
 同 Phase 1a/1b；另外：真实提交前必须得到用户明确同意，测试环境不得无意向 NAS 塞任务。
+
+跟踪 issue：[#4](https://github.com/aaeviru/dsh-downloader/issues/4)
