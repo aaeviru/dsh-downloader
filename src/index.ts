@@ -9,7 +9,7 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 
-export const name = 'dsh-experimental-downloader'
+export const name = 'dsh-downloader'
 
 /**
  * Register the plugin's contributions.
