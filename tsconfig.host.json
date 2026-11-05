@@ -5,7 +5,8 @@
     "outDir": "lib/types",
     "typeRoots": [
       "/home/aaevi/projects/deepseek-harness/node_modules/@types"
-    ]
+    ],
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
   },
   "include": [
     "src"
@@ -26,5 +27,8 @@
     {
       "path": "/home/aaevi/projects/deepseek-harness/packages/typert/protocol"
     }
+  ],
+  "exclude": [
+    "src/client"
   ]
 }

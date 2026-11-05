@@ -11,7 +11,13 @@ import { standardDecoratorPlugin } from '/home/aaevi/projects/deepseek-harness/v
 export default {
   plugins: [standardDecoratorPlugin()],
   test: {
-    include: ['tests/**/*.spec.ts'],
-    coverage: { provider: 'v8' as const, include: ['src/**'] },
+    include: ['tests/**/*.spec.{ts,tsx}'],
+    coverage: {
+      provider: 'v8' as const,
+      include: ['src/**'],
+      // The generated dsh-downloader/remote artifact is absent; the entry cannot be imported in tests.
+      exclude: ['src/client/index.ts'],
+      thresholds: { perFile: true, statements: 100, branches: 100, functions: 100, lines: 100 },
+    },
   },
 }
