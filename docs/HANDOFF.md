@@ -92,7 +92,15 @@ git -c credential.helper='!gh auth git-credential' push
   - **bundle 0.51 kB → 14.65 kB**：插件真正进入产物
   - 106 条测试、11 个源文件 100% 覆盖
   - 进度说明：[#7 comment 6658290935](https://github.com/aaeviru/dsh-downloader/issues/7#issuecomment-6658290935)
-- **Phase 4 第 2–4 步未做**：Remote 命名空间（需 harness 生成器认识本包）、客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
+- **Phase 4 第 2 步（Remote 层代码）已完成并提交**：`62f48e1 feat: expose the download namespace over Typert Remote`。
+  - `src/remote.ts`：`DownloadRemote extends TypertRemoteService`，命名空间 `download`，六个 `@Remote` 方法转发给共享服务
+  - `package.json` 增加 `./typert` 与 `./remote` 导出；`vitest.config.ts` 复用 harness 的 standard-decorator 预转换插件
+  - 107 条测试、12 个源文件 100% 覆盖、bundle 20.23 kB
+- **生成 Typert 产物的阻塞点（下一步要做的事）**：`pnpm exec tsx scripts/generate-typert.ts` 能跑（39 个包），但**不包含本包**。原因：分析器按包查找 `tsconfig.host.json` / `tsconfig.client.json` 面配置（`packages/typert/generator/src/analyzer.ts:344`），而本包只有一个 `tsconfig.json`。要接通需要三步：
+  1. 本包改成 solution 形状：`tsconfig.json` 只留 `files: []` + references，实际工程搬到 `tsconfig.host.json`（外加 Phase 4 客户端的 `tsconfig.client.json`）；
+  2. 在 harness 的 `tsconfig.host.json` references 里加 `{ "path": "./packages/experimental/dsh-downloader" }`（改 harness 仓库，一行）；
+  3. 重跑生成器，确认 `lib/typert.host.*` 与 `lib/typert.remote-client.*` 落到本包，再重跑 `tsc -b` 与 `bundle`。
+- **Phase 4 第 3–4 步未做**：客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
 - 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4（进行中）。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
