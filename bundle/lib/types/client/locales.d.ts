@@ -6,6 +6,8 @@ export declare const en: {
     readonly description: "Browse and submit download candidates.";
     readonly refresh: "Refresh";
     readonly search: "Search";
+    readonly title: "Title";
+    readonly size: "Size";
     readonly loading: "Loading…";
     readonly empty: "No download candidates yet.";
     readonly error: "Unable to load downloads.";

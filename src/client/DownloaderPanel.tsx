@@ -54,17 +54,27 @@ function CandidateRow({ candidate, t, download }: { candidate: Candidate; t: Tra
       setPending(false)
     }
   }
+  const columns = '1fr 120px 70px 70px 70px'
   return (
-    <li style={{ padding: '12px 0', borderBottom: '1px solid var(--dsw-alias-border-l2)' }}>
-      <span>{candidate.title}</span>{' '}
-      <span style={{ color: 'var(--dsw-alias-label-secondary)' }}>{candidate.sizeBytes === null ? t('unknownSize') : new Intl.NumberFormat(undefined, { style: 'unit', unit: 'byte' }).format(candidate.sizeBytes)}</span>{' '}
-      <span style={{ color: 'var(--dsw-alias-label-secondary)' }}>{published}</span>{' '}
-      <span>{t('seeders')}: {candidate.seeders ?? '—'}</span>{' '}
-      <span>{t('leechers')}: {candidate.leechers ?? '—'}</span>{' '}
-      <span>{t('downloads')}: {candidate.downloads ?? '—'}</span>{' '}
-      <button type="button" disabled={!candidate.submittable || pending} onClick={() => { void submit() }}>{pending ? t('submitting') : t('submit')}</button>
+    <li>
+      <button
+        type="button"
+        disabled={!candidate.submittable || pending}
+        onClick={() => { void submit() }}
+        style={{
+          display: 'grid', gridTemplateColumns: columns, gap: 8, width: '100%',
+          textAlign: 'left', background: 'none', border: 'none', cursor: candidate.submittable ? 'pointer' : 'not-allowed',
+          padding: '8px 4px', borderBottom: '1px solid var(--dsw-alias-border-l2)', color: 'inherit',
+        }}
+      >
+        <span>{candidate.title}</span>
+        <span style={{ color: 'var(--dsw-alias-label-secondary)' }}>{candidate.sizeBytes === null ? t('unknownSize') : new Intl.NumberFormat(undefined, { style: 'unit', unit: 'byte' }).format(candidate.sizeBytes)}</span>
+        <span style={{ color: 'var(--dsw-alias-label-secondary)' }}>{published}</span>
+        <span>{candidate.seeders ?? '—'}</span>
+        <span>{candidate.downloads ?? '—'}</span>
+      </button>
       {!candidate.submittable && <p>{t('unsubmittable')}</p>}
-      <p role="status">{message}</p>
+      {message !== '' && <p role="status">{message}</p>}
     </li>
   )
 }
@@ -123,6 +133,9 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
       {state.kind === 'error' && <div role="alert"><p>{t('error')}</p><button type="button" onClick={() => { void load(false) }}>{t('retry')}</button></div>}
       {state.kind === 'ready' && (state.candidates.length === 0 ? <p>{t('empty')}</p> : (
         <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 70px 70px 70px', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--dsw-alias-border-l2)', fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
+            <span>{t('title')}</span><span>{t('size')}</span><span>{t('published')}</span><span>{t('seeders')}</span><span>{t('downloads')}</span>
+          </div>
           <div role="group" aria-label="sort" style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
             {(['published', 'seeders', 'leechers', 'downloads'] as const).map(key => (
               <button
@@ -133,7 +146,7 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
               >{t(key)}{sort.key === key ? (sort.descending ? ' ↓' : ' ↑') : ''}</button>
             ))}
           </div>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 420, overflowY: 'auto' }}>
             {visible.map(candidate => <CandidateRow key={candidate.id} candidate={candidate} t={t} download={download} />)}
           </ul>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>

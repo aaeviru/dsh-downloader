@@ -511,60 +511,49 @@ window.__ModuleLoader__.load({
 					setPending(false);
 				}
 			}
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
-				style: {
-					padding: "12px 0",
-					borderBottom: "1px solid var(--dsw-alias-border-l2)"
-				},
-				children: [
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.title }),
-					" ",
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						style: { color: "var(--dsw-alias-label-secondary)" },
-						children: candidate.sizeBytes === null ? t("unknownSize") : new Intl.NumberFormat(void 0, {
-							style: "unit",
-							unit: "byte"
-						}).format(candidate.sizeBytes)
-					}),
-					" ",
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						style: { color: "var(--dsw-alias-label-secondary)" },
-						children: published
-					}),
-					" ",
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
-						t("seeders"),
-						": ",
-						candidate.seeders ?? "—"
-					] }),
-					" ",
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
-						t("leechers"),
-						": ",
-						candidate.leechers ?? "—"
-					] }),
-					" ",
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
-						t("downloads"),
-						": ",
-						candidate.downloads ?? "—"
-					] }),
-					" ",
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-						type: "button",
-						disabled: !candidate.submittable || pending,
-						onClick: () => {
-							submit();
-						},
-						children: pending ? t("submitting") : t("submit")
-					}),
-					!candidate.submittable && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("unsubmittable") }),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						role: "status",
-						children: message
-					})
-				]
-			});
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", { children: [
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+					type: "button",
+					disabled: !candidate.submittable || pending,
+					onClick: () => {
+						submit();
+					},
+					style: {
+						display: "grid",
+						gridTemplateColumns: "1fr 120px 70px 70px 70px",
+						gap: 8,
+						width: "100%",
+						textAlign: "left",
+						background: "none",
+						border: "none",
+						cursor: candidate.submittable ? "pointer" : "not-allowed",
+						padding: "8px 4px",
+						borderBottom: "1px solid var(--dsw-alias-border-l2)",
+						color: "inherit"
+					},
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.title }),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							style: { color: "var(--dsw-alias-label-secondary)" },
+							children: candidate.sizeBytes === null ? t("unknownSize") : new Intl.NumberFormat(void 0, {
+								style: "unit",
+								unit: "byte"
+							}).format(candidate.sizeBytes)
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							style: { color: "var(--dsw-alias-label-secondary)" },
+							children: published
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.seeders ?? "—" }),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.downloads ?? "—" })
+					]
+				}),
+				!candidate.submittable && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("unsubmittable") }),
+				message !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+					role: "status",
+					children: message
+				})
+			] });
 		}
 		/** Render loading, empty, candidate and recoverable error states. */
 		function DownloaderPanel({ t, download }) {
@@ -681,6 +670,24 @@ window.__ModuleLoader__.load({
 						})]
 					}),
 					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							style: {
+								display: "grid",
+								gridTemplateColumns: "1fr 120px 70px 70px 70px",
+								gap: 8,
+								padding: "6px 4px",
+								borderBottom: "1px solid var(--dsw-alias-border-l2)",
+								fontSize: 12,
+								color: "var(--dsw-alias-label-secondary)"
+							},
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("title") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("size") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("published") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("seeders") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("downloads") })
+							]
+						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							role: "group",
 							"aria-label": "sort",
@@ -709,7 +716,10 @@ window.__ModuleLoader__.load({
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
 							style: {
 								listStyle: "none",
-								padding: 0
+								padding: 0,
+								margin: 0,
+								maxHeight: 420,
+								overflowY: "auto"
 							},
 							children: visible.map((candidate) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CandidateRow, {
 								candidate,
@@ -785,6 +795,8 @@ window.__ModuleLoader__.load({
 			description: "Browse and submit download candidates.",
 			refresh: "Refresh",
 			search: "Search",
+			title: "Title",
+			size: "Size",
 			loading: "Loading…",
 			empty: "No download candidates yet.",
 			error: "Unable to load downloads.",
@@ -808,6 +820,8 @@ window.__ModuleLoader__.load({
 			description: "浏览并提交下载候选项。",
 			refresh: "刷新",
 			search: "搜索",
+			title: "标题",
+			size: "大小",
 			loading: "加载中…",
 			empty: "暂无下载候选项。",
 			error: "无法加载下载列表。",
