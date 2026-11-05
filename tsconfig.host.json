@@ -2,7 +2,10 @@
   "extends": "/home/aaevi/projects/deepseek-harness/tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib/types"
+    "outDir": "lib/types",
+    "typeRoots": [
+      "/home/aaevi/projects/deepseek-harness/node_modules/@types"
+    ]
   },
   "include": [
     "src"
