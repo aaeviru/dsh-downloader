@@ -4,43 +4,51 @@
 
 ## 1. 仓库与工作区接线
 
+**开发位置已改为 harness 内的真实目录**（2026-11-05 决定）：`packages/experimental/dsh-downloader` 不再是符号链接，Typert 生成器只认真实目录。
+
 | 项 | 值 |
 |---|---|
-| 插件真身 | `~/projects/dsh-downloader`（git 远端 `aaeviru/dsh-downloader`，分支 `main`） |
-| 工作区内的入口 | `packages/experimental/dsh-downloader` → **符号链接**指向真身 |
-| 污染防护 | dsh 仓库的 `.git/info/exclude` 已加该路径，`git status` 不显示 |
-| 会话工作区（写边界） | `/home/aaevi/projects/deepseek-harness` |
-| 沙箱模式 | `workspace-write` + 四个常设例外 |
+| 开发目录（源） | `~/projects/deepseek-harness/packages/experimental/dsh-downloader` |
+| 独立仓库（提交目标） | `~/projects/dsh-downloader`，远端 `aaeviru/dsh-downloader` |
+| harness 侧可见性 | `.git/info/exclude` 已排除该目录，`git status` 不显示（仅 `tsconfig.host.json` 与 `pnpm-lock.yaml` 会在 harness 里出现改动） |
+| 会话工作区 | `/home/aaevi/projects/deepseek-harness` |
 
-例外写在 `~/.dsh/profiles/web/cordis.patch.yml` 的 `sandbox-policy.additionalWritableRoots`：
+### 提交时如何同步
 
-```
-/home/aaevi/projects/dsh-plugin-hello-page
-/home/aaevi/projects/dsh-downloader
-/home/aaevi/.agents
-/home/aaevi/.local/share/pnpm/store
-```
-
-注意：include 的 patch 是**按 key 浅替换**，所以该条目必须连带重复 `mode` 与 `workspaceRoot`，否则会被默认值覆盖成 `read-only`。
-
-### 依赖安装：只能在 harness 根目录跑
-
-新依赖写进 `package.json` 后，**在 harness 根目录**执行：
+改完代码、门禁通过后，从 harness 目录拷回独立仓库再提交：
 
 ```sh
-cd /home/aaevi/projects/deepseek-harness
-pnpm install --filter dsh-downloader
+rsync -a --delete \
+  --exclude '.git' --exclude 'node_modules' --exclude 'lib' \
+  --exclude 'coverage' --exclude '.env' --exclude '.npm-cache' \
+  ~/projects/deepseek-harness/packages/experimental/dsh-downloader/ \
+  ~/projects/dsh-downloader/
+cd ~/projects/dsh-downloader && git add -A && git commit
 ```
 
-理由：`@deepseek-ai/cordis` 用的是 `workspace:~` 协议，只在 pnpm workspace 内解析。符号链接让这个包**本来就是 workspace 成员**（`pnpm list -r` 会列出 `dsh-downloader@0.0.0 ... (PRIVATE)`），根目录安装会把它当普通成员处理，依赖以 pnpm 软链接进 `node_modules`。
+`.env`（含 aria2 token）只存在于独立仓库，**不要**同步进 harness。
 
-**不要在 `~/projects/dsh-downloader` 里跑任何安装命令**：`npm install` 直接 `EUNSUPPORTEDPROTOCOL: workspace:~`，`pnpm install` 因为没有 workspace 定义也会失败。手工建软链或拷贝目录是错的做法（曾试过一次，已废弃）。
+### 依赖安装
 
-**副作用**：根目录安装会在 `pnpm-lock.yaml` 增加一条 importer 记录（`packages/experimental/dsh-downloader:`）。**这个改动永远不要提交** —— CI 上没有该目录，`--frozen-lockfile` 会失败。`pnpm-lock.yaml` 的 `M` 状态是预期的（`hello-page` 那条也是同样来源）。
+在 harness 根目录执行：
+
+```sh
+cd ~/projects/deepseek-harness && pnpm install --filter dsh-downloader
+```
+
+`pnpm-lock.yaml` 会多出本包的 importer 记录，**不要提交**（CI 上没有该目录）。
+
+### Typert 生成
+
+```sh
+cd ~/projects/deepseek-harness && pnpm exec tsx scripts/generate-typert.ts
+```
+
+依赖两件事：①本包是真实目录；②harness 的 `tsconfig.host.json` references 里有 `{ "path": "./packages/experimental/dsh-downloader/tsconfig.host.json" }`（**指向 host 叶配置，不是 solution**）。产物写到本包 `lib/typert.host.*` 与 `lib/typert.remote-client.*`。
+
+Remote 边界类型必须从非根子路径导出：`src/types.ts` + `package.json` 的 `"./types"`。
 
 ### 推送
-
-需要 gh 凭据助手（沙箱内没有 git 凭据）：
 
 ```sh
 git -c credential.helper='!gh auth git-credential' push
@@ -96,10 +104,7 @@ git -c credential.helper='!gh auth git-credential' push
   - `src/remote.ts`：`DownloadRemote extends TypertRemoteService`，命名空间 `download`，六个 `@Remote` 方法转发给共享服务
   - `package.json` 增加 `./typert` 与 `./remote` 导出；`vitest.config.ts` 复用 harness 的 standard-decorator 预转换插件
   - 107 条测试、12 个源文件 100% 覆盖、bundle 20.23 kB
-- **生成 Typert 产物的阻塞点（下一步要做的事）**：`pnpm exec tsx scripts/generate-typert.ts` 能跑（39 个包），但**不包含本包**。原因：分析器按包查找 `tsconfig.host.json` / `tsconfig.client.json` 面配置（`packages/typert/generator/src/analyzer.ts:344`），而本包只有一个 `tsconfig.json`。要接通需要三步：
-  1. ✅ **已做**：本包已改成 solution 形状 —— `tsconfig.json` 只有 `files: []` + references，实际工程在 `tsconfig.host.json`；`tsc -b` 仍 exit 0，107 条测试、bundle 20.23 kB 均不变。
-  2. ❌ **试过但无效**：在 harness 的 `tsconfig.host.json` references 里加 `./packages/experimental/dsh-downloader`，以及改成指向 `.../tsconfig.host.json` 叶配置，两次重跑生成器都仍是「39 个包」，不含本包。改动已回退，harness 保持原样。
-  3. 下一步要读 `packages/typert/generator/src/analyzer.ts` 的 `discoverPackages`，弄清它到底按什么枚举包（很可能是遍历 `<root>/packages` 的**真实目录**，符号链接进来的包不在其列）。若是这个原因，可选：(a) 把包做成真实目录（放弃独立仓）；(b) 给生成器加一个显式的包清单配置；(c) 换一条不依赖 typert 生成的浏览器通道。
+- **生成 Typert 产物已打通**（2026-11-05）：生成器输出「40 个包」，本包 `lib/` 出现 `typert.host.*` / `typert.remote-client.*`。两处关键：①本包改为 harness 内真实目录；②harness `tsconfig.host.json` references 指向 **host 叶配置**；③Remote 边界类型经 `src/types.ts` + `"./types"` 导出。
 - **Phase 4 第 3–4 步未做**：客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
 - 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4（进行中）。
 
