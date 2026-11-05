@@ -19,6 +19,9 @@
     },
     {
       "path": "/home/aaevi/projects/deepseek-harness/vendor/schemastery"
+    },
+    {
+      "path": "/home/aaevi/projects/deepseek-harness/packages/typert/protocol"
     }
   ]
 }

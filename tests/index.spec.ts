@@ -14,7 +14,7 @@ afterEach(() => { vi.restoreAllMocks() })
 
 it('supplies mount defaults and validates timeout', () => {
   expect(name).toBe('dsh-downloader')
-  expect(inject).toEqual(['tools', 'credentials'])
+  expect(inject).toEqual(['tools', 'credentials', 'typert'])
   expect(Config({})).toEqual({ endpoint: 'http://10.0.0.7:8082/jsonrpc', tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json' })
   expect(() => Config({ timeoutMs: 0 })).toThrow()
 })
@@ -37,6 +37,7 @@ it.each([false, true])('wires persistent store, credentials, tools and disposal 
       .mockResolvedValueOnce({ value: 'first', source: 'test' }).mockResolvedValueOnce(undefined).mockResolvedValue({ value: 'rotated', source: 'test' })
     process.env.DSH_HOME = directory
     const ctx = {
+      reflect: { provide: vi.fn() },
       tools: { register }, credentials: { resolve },
       effect: (callback: () => (() => void | Promise<void>) | Promise<() => void | Promise<void>>) => {
         effects.push(Promise.resolve(callback()))
