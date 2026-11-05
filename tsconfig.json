@@ -13,6 +13,12 @@
     },
     {
       "path": "/home/aaevi/projects/deepseek-harness/packages/core/tools"
+    },
+    {
+      "path": "/home/aaevi/projects/deepseek-harness/packages/credentials/credentials"
+    },
+    {
+      "path": "/home/aaevi/projects/deepseek-harness/vendor/schemastery"
     }
   ]
 }

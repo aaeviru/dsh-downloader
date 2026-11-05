@@ -31,6 +31,7 @@ export interface Aria2DownloadStatus {
   readonly totalLength: number | null
   readonly completedLength: number | null
   readonly errorMessage: string | null
+  readonly followedBy: readonly string[]
 }
 
 export class Aria2Error extends Error {}
@@ -137,8 +138,10 @@ export function createAria2Client(config: Aria2Config, transport: Aria2Transport
     addUri: (uris, options) => call('aria2.addUri', options === undefined ? [uris] : [uris, options], value => ({ gid: string(value) })),
     tellStatus: gid => call('aria2.tellStatus', [gid], (value) => {
       const result = record(value)
+      const followedBy = result.followedBy === undefined ? [] : result.followedBy
+      if (!Array.isArray(followedBy)) throw new Error()
       return {
-        gid: string(result.gid), status: string(result.status),
+        gid: string(result.gid), status: string(result.status), followedBy: followedBy.map(string),
         totalLength: length(result.totalLength), completedLength: length(result.completedLength),
         errorMessage: result.errorMessage === undefined ? null : string(result.errorMessage),
       }

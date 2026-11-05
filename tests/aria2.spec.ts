@@ -72,10 +72,14 @@ describe('aria2', () => {
   })
   it('tellStatus maps lengths and missing fields', async () => {
     result({ gid: 'g', status: 'active', totalLength: '100', completedLength: '0', errorMessage: 'detail' })
-    expect(await client().tellStatus('g')).toEqual({ gid: 'g', status: 'active', totalLength: 100, completedLength: 0, errorMessage: 'detail' })
+    expect(await client().tellStatus('g')).toEqual({
+      gid: 'g', status: 'active', totalLength: 100, completedLength: 0, errorMessage: 'detail', followedBy: [],
+    })
     expect(requests[0]).toEqual({ jsonrpc: '2.0', id: 1, method: 'aria2.tellStatus', params: ['g'] })
     result({ gid: 'g', status: 'waiting' })
-    expect(await client().tellStatus('g')).toEqual({ gid: 'g', status: 'waiting', totalLength: null, completedLength: null, errorMessage: null })
+    expect(await client().tellStatus('g')).toEqual({
+      gid: 'g', status: 'waiting', totalLength: null, completedLength: null, errorMessage: null, followedBy: [],
+    })
   })
   it('Unauthorized maps to Aria2AuthError', async () => {
     rpcError(1)
