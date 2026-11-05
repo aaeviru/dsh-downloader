@@ -125,6 +125,15 @@ git -c credential.helper='!gh auth git-credential' push
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
+> **2026-11-06 决定：不再走「临时改一改」的捷径。** 所有改动先在本仓库开 issue，按
+> `[CONTRACT]` → `[DECISION]` → `[IMPLEMENTATION]`（Codex）→ 验收方独立重跑门禁 →
+> `[REVIEW]`（逐点 VERIFIED + 证据）→ `[DECISION]` 走完。
+>
+> 理由是实测的：三次产物漂移（`.gitignore` 吞 `lib/`、typert 未重生成、构建未先编译）
+> 全部发生在「直接改代码、跑通 tsc+单测就提交」的路上，且单测一次都没抓到。
+> issue 模式强制把「构建产物与源码一致」「wire schema 同步」这类检查写进验收清单。
+
+
 - 评论首行署名：`DeepSeek:`（plan/review 边界）、`Codex:`（worker 边界）。
 - 交接链：`[CONTRACT vN]`（PROPOSED）→ 人类 `[DECISION] APPROVE CONTRACT vN` + 固定链接 → code-agent 实现并回 `[IMPLEMENTATION]`（commit SHA + 原始命令输出 + known_gaps）→ 独立边界重跑门禁并回 `[REVIEW]`（逐行为点 `VERIFIED / NOT_VERIFIED` + 证据）→ 人类 `[DECISION]`。
 - Worker 自述不算证据；Build/lint/typecheck 通过只证明静态条件；单元测试不证明集成行为。
