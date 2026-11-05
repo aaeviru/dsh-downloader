@@ -51,6 +51,14 @@ import { createJsonFileSubmitStoreBackend } from "./store-json.js";
 export function resolveStorePath(storePath, env = process.env) {
     return resolve(env.DSH_HOME ?? join(homedir(), '.dsh'), storePath);
 }
+/**
+ * Build the feed source factory the service uses for every page request.
+ * @param config - feed address, page size, and request timeout.
+ * @returns a factory taking one keyword and one page number.
+ */
+export function feedSource(config) {
+    return (keyword, page) => createRssSource({ feedBase: config.feedBase, page, limit: config.pageSize, keyword, timeoutMs: config.timeoutMs });
+}
 /** Own the download service and its browser namespace. */
 let DownloadRemote = (() => {
     let _classSuper = TypertRemoteService;
@@ -81,7 +89,8 @@ let DownloadRemote = (() => {
             tokenRef: z.string().default('ARIA2_TOKEN'),
             timeoutMs: z.number().min(1).default(15000),
             storePath: z.string().default('downloader/submissions.json'),
-            feedUrl: z.string().default('https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0'),
+            feedBase: z.string().default('https://sukebei.nyaa.net/feed/magnet'),
+            pageSize: z.number().min(1).max(300).default(100),
         });
         /** The service the tools and the Remote methods share. */
         service = __runInitializers(this, _instanceExtraInitializers);
@@ -96,8 +105,8 @@ let DownloadRemote = (() => {
                 return createDownloadService({
                     store,
                     // RSS wiring arrives in the next step; discovery is explicitly empty for now.
-                    source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
-                    makeSource: keyword => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs }),
+                    source: feedSource(config)('', 1),
+                    makeSource: feedSource(config),
                     downloader: {
                         async add(candidate) {
                             const uri = candidate.torrentUrl ?? candidate.magnetUri;
@@ -118,18 +127,18 @@ let DownloadRemote = (() => {
                 return () => store.flush();
             });
             this.service = {
-                search: async (keyword) => (await ready).search(keyword),
-                listCandidates: async () => (await ready).listCandidates(),
+                search: async (keyword, page) => (await ready).search(keyword, page),
+                listCandidates: async (page) => (await ready).listCandidates(page),
                 add: async (candidateId) => (await ready).add(candidateId),
                 status: async (gid) => (await ready).status(gid),
                 refresh: async () => (await ready).refresh(),
             };
         }
-        search(keyword) {
-            return this.service.search(keyword);
+        search(keyword, page) {
+            return this.service.search(keyword, page);
         }
-        list() {
-            return this.service.listCandidates();
+        list(page) {
+            return this.service.listCandidates(page);
         }
         add(candidateId) {
             return this.service.add(candidateId);

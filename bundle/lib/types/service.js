@@ -11,34 +11,31 @@ export class UnknownCandidateError extends Error {
 /** Create the service over the three injected seams. */
 export function createDownloadService(deps) {
     const coordinator = createDownloadCoordinator(deps);
-    let cache;
-    async function discover() {
-        cache = dedupeCandidates(await deps.source.listCandidates());
-        return cache;
+    // Only `add` reads this: pages are always fetched fresh.
+    let lastPage = [];
+    async function fetchPage(keyword, page) {
+        const source = (deps.makeSource ?? (() => deps.source))(keyword, page);
+        lastPage = dedupeCandidates(await source.listCandidates());
+        return lastPage;
     }
     return {
-        async search(keyword) {
-            const candidates = await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates();
-            cache = dedupeCandidates(candidates);
-            return cache;
-        },
-        async listCandidates() {
-            return cache ?? discover();
-        },
+        search: (keyword, page) => fetchPage(keyword, page),
+        listCandidates: page => fetchPage('', page),
         async add(candidateId) {
-            const candidates = !cache || cache.length === 0 ? await discover() : cache;
-            const candidate = candidates.find(candidate => candidate.id === candidateId);
-            if (!candidate)
+            let candidate = lastPage.find(entry => entry.id === candidateId);
+            if (candidate === undefined) {
+                await fetchPage('', 1);
+                candidate = lastPage.find(entry => entry.id === candidateId);
+            }
+            if (candidate === undefined)
                 throw new UnknownCandidateError(candidateId);
             return coordinator.submit(candidate);
         },
         status(gid) {
             return deps.downloader.status(gid);
         },
-        async refresh() {
-            const result = await coordinator.refresh();
-            await discover();
-            return result;
+        refresh() {
+            return coordinator.refresh();
         },
     };
 }

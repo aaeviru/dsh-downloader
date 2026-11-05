@@ -5,8 +5,8 @@ export type { SubmitResult } from '../types.ts'
 
 /** Browser operations consumed by the downloader panel. */
 export interface DownloadNamespace {
-  list: () => Promise<RemoteResult<readonly Candidate[]>>
-  search: (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
+  list: (page: number) => Promise<RemoteResult<readonly Candidate[]>>
+  search: (keyword: string, page: number) => Promise<RemoteResult<readonly Candidate[]>>
   refresh: () => Promise<RemoteResult<RefreshResult>>
   add: (candidateId: string) => Promise<RemoteResult<SubmitResult>>
 }

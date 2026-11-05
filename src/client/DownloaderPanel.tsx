@@ -85,7 +85,6 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({ key: 'published', descending: true })
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(1)
-  const pageSize = 20
   const load = useCallback(async (refresh: boolean) => {
     setState({ kind: 'loading' })
     try {
@@ -93,7 +92,7 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
         const result = await download.refresh()
         if (!result.ok) { setState({ kind: 'error' }); return }
       }
-      const result = await download.list()
+      const result = await download.list(page)
       setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
@@ -104,15 +103,13 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
     setState({ kind: 'loading' })
     setPage(1)
     try {
-      const result = await download.search(keyword)
+      const result = await download.search(keyword, 1)
       setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
     }
   }, [download, keyword])
-  const ordered = state.kind === 'ready' ? order(state.candidates, sort) : []
-  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize))
-  const visible = ordered.slice((page - 1) * pageSize, page * pageSize)
+  const visible = state.kind === 'ready' ? order(state.candidates, sort) : []
   return (
     <section style={{ padding: 24, color: 'var(--dsw-alias-label-primary)', background: 'var(--dsw-alias-bg-base)' }}>
       <h1>{t('panel')}</h1>
@@ -151,8 +148,8 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
           </ul>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
             <button type="button" disabled={page <= 1} onClick={() => { setPage(value => Math.max(1, value - 1)) }}>‹</button>
-            <span aria-live="polite">{page} / {pageCount}</span>
-            <button type="button" disabled={page >= pageCount} onClick={() => { setPage(value => Math.min(pageCount, value + 1)) }}>›</button>
+            <span aria-live="polite">{page}</span>
+            <button type="button" onClick={() => { setPage(value => value + 1) }}>›</button>
           </div>
         </div>
       ))}

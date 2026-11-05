@@ -33,7 +33,7 @@ export function createDownloadTools(service: DownloadService, options: {
         render: (_args, value) => [{ type: 'text', text: `Found ${value.candidates.length} candidates.` }],
       },
       async execute({ keyword }) {
-        const candidates = await service.search(keyword)
+        const candidates = await service.search(keyword, 1)
         return { candidates: candidates.map(({ id, title, submittable, sizeBytes, infoHash }) => ({
           id, title, submittable, sizeBytes, infoHash,
         })) }

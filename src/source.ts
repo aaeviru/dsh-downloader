@@ -25,7 +25,12 @@ export class FeedFetchError extends Error {
 }
 
 export interface RssSourceOptions {
-  readonly feedUrl: string
+  /** Legacy feed base, e.g. https://sukebei.nyaa.net/feed/magnet. */
+  readonly feedBase: string
+  /** One-based page number appended as /p/<page>. */
+  readonly page: number
+  /** Items per page passed as ?limit=; the site caps this at 300. */
+  readonly limit: number
   /** Feed search term; omitted keeps the address as configured. */
   readonly keyword?: string
   readonly timeoutMs: number
@@ -41,11 +46,11 @@ const defaultTransport: FeedTransport = (url, signal) => fetch(url, { signal })
  */
 export function createRssSource(options: RssSourceOptions): Source {
   const transport = options.transport ?? defaultTransport
-  const sourceId = new URL(options.feedUrl).host
+  const sourceId = new URL(options.feedBase).host
   const requestUrl = (): string => {
-    if (options.keyword === undefined || options.keyword.trim() === '') return options.feedUrl
-    const url = new URL(options.feedUrl)
-    url.searchParams.set('q', options.keyword)
+    const url = new URL(`${options.feedBase}/p/${String(options.page)}`)
+    url.searchParams.set('limit', String(options.limit))
+    if (options.keyword !== undefined && options.keyword.trim() !== '') url.searchParams.set('q', options.keyword)
     return url.toString()
   }
   return {

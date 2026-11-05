@@ -45,7 +45,7 @@ describe('download tools', () => {
     const expected = { candidates: [{ id: 'candidate', title: 'Example', submittable: true, sizeBytes: null, infoHash: null }] }
     const result = await search.execute(args, exec)
     expect(result).toEqual(expected)
-    expect(service.search).toHaveBeenCalledWith('Example')
+    expect(service.search).toHaveBeenCalledWith('Example', 1)
     expect(search.output.render(args, expected)).toEqual([{ type: 'text', text: 'Found 1 candidates.' }])
     expect(JSON.stringify(result)).not.toContain('secret')
   })

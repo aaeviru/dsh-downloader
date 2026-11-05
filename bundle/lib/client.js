@@ -564,7 +564,6 @@ window.__ModuleLoader__.load({
 			});
 			const [keyword, setKeyword] = (0, react.useState)("");
 			const [page, setPage] = (0, react.useState)(1);
-			const pageSize = 20;
 			const load = (0, react.useCallback)(async (refresh) => {
 				setState({ kind: "loading" });
 				try {
@@ -574,7 +573,7 @@ window.__ModuleLoader__.load({
 							return;
 						}
 					}
-					const result = await download.list();
+					const result = await download.list(page);
 					setState(result.ok ? {
 						kind: "ready",
 						candidates: result.value
@@ -590,7 +589,7 @@ window.__ModuleLoader__.load({
 				setState({ kind: "loading" });
 				setPage(1);
 				try {
-					const result = await download.search(keyword);
+					const result = await download.search(keyword, 1);
 					setState(result.ok ? {
 						kind: "ready",
 						candidates: result.value
@@ -599,9 +598,7 @@ window.__ModuleLoader__.load({
 					setState({ kind: "error" });
 				}
 			}, [download, keyword]);
-			const ordered = state.kind === "ready" ? order(state.candidates, sort) : [];
-			const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
-			const visible = ordered.slice((page - 1) * pageSize, page * pageSize);
+			const visible = state.kind === "ready" ? order(state.candidates, sort) : [];
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				style: {
 					padding: 24,
@@ -743,19 +740,14 @@ window.__ModuleLoader__.load({
 									},
 									children: "‹"
 								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 									"aria-live": "polite",
-									children: [
-										page,
-										" / ",
-										pageCount
-									]
+									children: page
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 									type: "button",
-									disabled: page >= pageCount,
 									onClick: () => {
-										setPage((value) => Math.min(pageCount, value + 1));
+										setPage((value) => value + 1);
 									},
 									children: "›"
 								})

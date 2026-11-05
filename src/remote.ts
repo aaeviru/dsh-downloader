@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path'
 import { createAria2Client } from './aria2.ts'
 import { createDownloadService } from './service.ts'
 import { createRssSource } from './source.ts'
+import type { Source } from './coordinator.ts'
 import type { DownloadService } from './service.ts'
 import type { Candidate, RefreshResult, SubmitResult } from './types.ts'
 import { createPersistentSubmitStore } from './store.ts'
@@ -27,7 +28,17 @@ export interface Config {
   tokenRef: string
   timeoutMs: number
   storePath: string
-  feedUrl: string
+  feedBase: string
+  pageSize: number
+}
+
+/**
+ * Build the feed source factory the service uses for every page request.
+ * @param config - feed address, page size, and request timeout.
+ * @returns a factory taking one keyword and one page number.
+ */
+export function feedSource(config: Pick<Config, 'feedBase' | 'pageSize' | 'timeoutMs'>): (keyword: string, page: number) => Source {
+  return (keyword, page) => createRssSource({ feedBase: config.feedBase, page, limit: config.pageSize, keyword, timeoutMs: config.timeoutMs })
 }
 
 /** Own the download service and its browser namespace. */
@@ -38,7 +49,8 @@ export class DownloadRemote extends TypertRemoteService {
     tokenRef: z.string().default('ARIA2_TOKEN'),
     timeoutMs: z.number().min(1).default(15000),
     storePath: z.string().default('downloader/submissions.json'),
-    feedUrl: z.string().default('https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0'),
+    feedBase: z.string().default('https://sukebei.nyaa.net/feed/magnet'),
+    pageSize: z.number().min(1).max(300).default(100),
   })
 
   /** The service the tools and the Remote methods share. */
@@ -57,8 +69,8 @@ export class DownloadRemote extends TypertRemoteService {
       return createDownloadService({
         store,
         // RSS wiring arrives in the next step; discovery is explicitly empty for now.
-        source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
-        makeSource: keyword => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs }),
+        source: feedSource(config)('', 1),
+        makeSource: feedSource(config),
         downloader: {
           async add(candidate) {
             const uri = candidate.torrentUrl ?? candidate.magnetUri
@@ -78,8 +90,8 @@ export class DownloadRemote extends TypertRemoteService {
       return () => store.flush()
     })
     this.service = {
-      search: async keyword => (await ready).search(keyword),
-      listCandidates: async () => (await ready).listCandidates(),
+      search: async (keyword, page) => (await ready).search(keyword, page),
+      listCandidates: async page => (await ready).listCandidates(page),
       add: async candidateId => (await ready).add(candidateId),
       status: async gid => (await ready).status(gid),
       refresh: async () => (await ready).refresh(),
@@ -87,13 +99,13 @@ export class DownloadRemote extends TypertRemoteService {
   }
 
   @Remote('search')
-  search(keyword: string): Promise<readonly Candidate[]> {
-    return this.service.search(keyword)
+  search(keyword: string, page: number): Promise<readonly Candidate[]> {
+    return this.service.search(keyword, page)
   }
 
   @Remote('list')
-  list(): Promise<readonly Candidate[]> {
-    return this.service.listCandidates()
+  list(page: number): Promise<readonly Candidate[]> {
+    return this.service.listCandidates(page)
   }
 
   @Remote('add')
