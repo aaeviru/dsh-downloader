@@ -74,7 +74,7 @@ git -c credential.helper='!gh auth git-credential' push
   - `src/coordinator.ts`：`createDownloadCoordinator({ source, downloader, store })`、`refresh()` / `submit()`、单飞保护（每实例 in-flight map）、四类返回值
   - `tests/coordinator.spec.ts`：12 条用例，纯内存假接缝，不起 socket
   - `[CONTRACT v3]` 挂在 #4（含一处规格矛盾的裁决：`refresh()` 自动提交）；`[REVIEW]` 已发（[#4 comment 6657462793](https://github.com/aaeviru/dsh-downloader/issues/4#issuecomment-6657462793)），B1–B8 全部 VERIFIED。**等待人类 `[DECISION]`。**
-  - **人工端到端验收未做**：接真实 NAS 提交一条的任务书要求「必须得到用户明确同意」，尚未授权。
+  - **真实链路验收已完成**（2026-11-05，人类授权后）：getVersion 1.36.0 → 解析 75 条 → 规则选 1 条 → 提交得到 gid `6e391940d688cfa5` → 重复提交返回 `alreadySubmitted`。证据见 [#4 comment 6658165081](https://github.com/aaeviru/dsh-downloader/issues/4#issuecomment-6658165081)。
 - **Phase 2 已实现并提交**：`a26bab1 feat: add the download service and its three model tools`。
   - `src/service.ts`：`createDownloadService({ source, downloader, store })`，`search` / `listCandidates` / `add` / `status` / `refresh`，`UnknownCandidateError`
   - `src/tools.ts`：`createDownloadTools(service, { clock })` → `download_search` / `download_add` / `download_status`（`defineTool`）
@@ -103,6 +103,8 @@ git -c credential.helper='!gh auth git-credential' push
 - aria2：`10.0.0.7:8082`（RFC1918 内网），从 WSL **TCP 可达**；`aria2.getVersion` 返回 `{"error":{"code":1,"message":"Unauthorized"}}` → 服务在跑，缺 token。
 - token 来源：`ARIA2_TOKEN` 环境变量，或 `ctx.credentials`（存储优先 → env → `.env`，文件为 `~/.dsh/.credentials.yaml`）。**不要把 token 写进代码、日志、issue 或仓库。**
 - 示例 RSS：`https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0`。一次真实抓取的 75 条结果在 `~/.dsh/attachments/` 内（B14 证据来自全量；入库 fixture 只取 6 条）。
+- **本机 node 的 `fetch` 连不上外网**（连接超时），`curl` 可以（HTTP 200）。要抓外部 feed 时先 curl 落盘再解析。
+- aria2 token 放在 `~/projects/dsh-downloader/.env`（已 gitignore，0600）；`ARIA2_TOKEN` 环境变量与 `~/.dsh/.credentials.yaml` 里都没有它。
 
 ## 6. 验收命令（执行者自检，验收方必须重跑）
 
@@ -136,7 +138,7 @@ cd /home/aaevi/projects/dsh-downloader
 ## 8. 明确未验证的 / 已知缺口
 
 - **bundle 产物仍是 0.51 kB**：`src/candidate.ts` 与 `src/rss.ts` 未从 `src/index.ts` 导出，Phase 1a 是源码级交付；插件接线在后续阶段。别把「bundle 通过」当成新代码已进产物。
-- 真实 RSS 站点的响应（`sukebei.nyaa.si` 在 WSL 内的实时可达性未测；上次抓到的是快照）。
+- **`status(gid)` 只反映「包装任务」**：提交 `.torrent` URL 时 aria2 的 `follow-torrent` 会派生新 gid（`followedBy`），真下载在派生 gid 上。Phase 4 需要跟随 `followedBy`，否则界面会显示「已完成」而实际仍在下载。
 - 真实 aria2 提交（需 token + 人类同意，避免向 NAS 塞测试任务）。
 - Desktop 安装形态（`plugin_manager install_bundle`）。
 - `--patch + dev:web` 的端到端加载：需要起第二个服务，未执行。
