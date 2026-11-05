@@ -185,3 +185,18 @@ cd /home/aaevi/projects/dsh-downloader
 - [dsh-plugin-docs](https://github.com/aaeviru/dsh-plugin-docs) — 包骨架、门禁顺序、Codex 协作流程的踩坑记录（08 协作流程、10 坑位速查必读）。
 - [hello-nodejs](https://github.com/aaeviru/hello-nodejs) — 已验证的 hello-page 骨架参照。
 - [brainstorming](https://github.com/aaeviru/brainstorming) — 协作协议与实证案例。
+
+## 10. 按包名加载插件的三个前提（2026-11-05 实测）
+
+用 `dsh web --patch <overlay>` 按**包名**插入实验插件时，三件事缺一不可，顺序如下：
+
+1. **`tsconfig.base.json` 的 `paths` 必须有本包别名**。插件加载器经 tsx 用这份映射解析包名。包名与目录名不一致时生成器会明确拒绝（见 `dsh-plugin-docs` 01 篇坑 #9），必须手写三条：
+   `@deepseek-ai/dsh-experimental-downloader`、`.../types`、`.../client`。
+2. **改包名后必须重跑 `generate-typert`**。否则 `lib/typert.host.js` 里仍是旧包名，加载时报 `TYPERT manifest names package "dsh-downloader" — the manifest must be owned by the package that exports it`。
+3. **起服务要 `cd` 到 harness 根目录**（tsx 才会应用 paths），且 `DSH_HOME` 指向可写目录。
+
+实测结果：overlay 按包名插入后无告警，boot payload 含
+`{"id":"@deepseek-ai/dsh-experimental-downloader","url":"plugins/??@deepseek-ai/dsh-experimental-downloader/client.js&rev=da3ae259b67c"}`，
+模块路由 200、24 KB。
+
+第三层（Playwright 真浏览器点测）仍未做。
