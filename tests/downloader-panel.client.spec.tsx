@@ -58,3 +58,10 @@ it('shows seeders, leechers, downloads and orders by the clicked column', async 
   fireEvent.click(screen.getByRole('button', { name: /seeders/i }))
   expect(titles()[0]).toBe('Older')
 })
+
+it('renders the publication date in Japan time as year-month-day', async () => {
+  const evening = candidate({ id: 'jst', publishedAt: '2026-11-05T20:30:00.000Z' })
+  render(<DownloaderPanel t={t} download={namespace(async () => ({ ok: true, value: [evening] }))} />)
+  await screen.findByText('Example release')
+  expect(document.body.textContent).toContain('2026年11月6日')
+})

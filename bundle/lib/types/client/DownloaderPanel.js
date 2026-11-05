@@ -1,5 +1,14 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useEffect, useState } from 'react';
+/** Render a publication instant as a Japan-time calendar date. */
+function formatPublished(publishedAt) {
+    if (publishedAt === null)
+        return '—';
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric' })
+        .formatToParts(new Date(publishedAt));
+    const value = (type) => parts.find(part => part.type === type)?.value ?? '';
+    return `${value('year')}年${value('month')}月${value('day')}日`;
+}
 /** Read one sortable value; missing values always sort last. */
 function sortValue(candidate, key) {
     if (key === 'published')
@@ -25,7 +34,7 @@ function outcome(result, t) {
 function CandidateRow({ candidate, t, download }) {
     const [pending, setPending] = useState(false);
     const [message, setMessage] = useState('');
-    const published = candidate.publishedAt === null ? '—' : candidate.publishedAt.slice(0, 10);
+    const published = formatPublished(candidate.publishedAt);
     async function submit() {
         setPending(true);
         try {

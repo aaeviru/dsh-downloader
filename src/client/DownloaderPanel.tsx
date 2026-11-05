@@ -6,6 +6,15 @@ import type { DownloadNamespace, SubmitResult } from './namespace.ts'
 type Translate = (key: DownloaderKey) => string
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; candidates: readonly Candidate[] }
 
+/** Render a publication instant as a Japan-time calendar date. */
+function formatPublished(publishedAt: string | null): string {
+  if (publishedAt === null) return '—'
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric' })
+    .formatToParts(new Date(publishedAt))
+  const value = (type: string): string => parts.find(part => part.type === type)?.value ?? ''
+  return `${value('year')}年${value('month')}月${value('day')}日`
+}
+
 /** Columns the list can be ordered by. */
 type SortKey = 'published' | 'seeders' | 'leechers' | 'downloads'
 
@@ -33,7 +42,7 @@ function outcome(result: SubmitResult, t: Translate): string {
 function CandidateRow({ candidate, t, download }: { candidate: Candidate; t: Translate; download: DownloadNamespace }) {
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState('')
-  const published = candidate.publishedAt === null ? '—' : candidate.publishedAt.slice(0, 10)
+  const published = formatPublished(candidate.publishedAt)
   async function submit() {
     setPending(true)
     try {

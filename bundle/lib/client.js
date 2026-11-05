@@ -466,6 +466,18 @@ window.__ModuleLoader__.load({
 		}, zod.z);
 		//#endregion
 		//#region src/client/DownloaderPanel.tsx
+		/** Render a publication instant as a Japan-time calendar date. */
+		function formatPublished(publishedAt) {
+			if (publishedAt === null) return "—";
+			const parts = new Intl.DateTimeFormat("en-US", {
+				timeZone: "Asia/Tokyo",
+				year: "numeric",
+				month: "numeric",
+				day: "numeric"
+			}).formatToParts(new Date(publishedAt));
+			const value = (type) => parts.find((part) => part.type === type)?.value ?? "";
+			return `${value("year")}年${value("month")}月${value("day")}日`;
+		}
 		/** Read one sortable value; missing values always sort last. */
 		function sortValue(candidate, key) {
 			if (key === "published") return candidate.publishedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(candidate.publishedAt);
@@ -487,7 +499,7 @@ window.__ModuleLoader__.load({
 		function CandidateRow({ candidate, t, download }) {
 			const [pending, setPending] = (0, react.useState)(false);
 			const [message, setMessage] = (0, react.useState)("");
-			const published = candidate.publishedAt === null ? "—" : candidate.publishedAt.slice(0, 10);
+			const published = formatPublished(candidate.publishedAt);
 			async function submit() {
 				setPending(true);
 				try {
