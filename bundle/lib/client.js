@@ -173,6 +173,8 @@ window.__ModuleLoader__.load({
 			zod.z.object({ "alreadySubmitting": zod.z.literal(true).readonly() }),
 			zod.z.object({ "unsubmittable": zod.z.literal(true).readonly() })
 		]);
+		let _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_list_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
@@ -183,6 +185,9 @@ window.__ModuleLoader__.load({
 			"magnetUri": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
 			"torrentUrl": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
 			"sizeBytes": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly(),
+			"seeders": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Swarm seeders when the feed reports them."),
+			"leechers": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Swarm leechers when the feed reports them."),
+			"downloads": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Completed downloads when the feed reports them."),
 			"sourceUrl": zod.z.string().readonly(),
 			"submittable": zod.z.boolean().readonly(),
 			"dedupeKey": zod.z.string().readonly()
@@ -196,6 +201,8 @@ window.__ModuleLoader__.load({
 		});
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
@@ -206,6 +213,9 @@ window.__ModuleLoader__.load({
 			"magnetUri": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
 			"torrentUrl": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
 			"sizeBytes": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly(),
+			"seeders": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Swarm seeders when the feed reports them."),
+			"leechers": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Swarm leechers when the feed reports them."),
+			"downloads": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Completed downloads when the feed reports them."),
 			"sourceUrl": zod.z.string().readonly(),
 			"submittable": zod.z.boolean().readonly(),
 			"dedupeKey": zod.z.string().readonly()
@@ -216,8 +226,12 @@ window.__ModuleLoader__.load({
 		const _deepseek_ai_dsh_experimental_downloader_download_status_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value ??= zod.z.object({ "state": zod.z.string() });
 		let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= zod.z.string();
 		const TYPERT_REMOTE = createTypertRemoteInfo({
@@ -250,14 +264,29 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 96,
+						"line": 112,
 						"column": 3
 					}
 				},
 				"download/list": {
 					service: "download",
 					invocation: { kind: "direct" },
-					parameters: [],
+					parameters: [{
+						name: "page",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:page",
+							create: _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema,
+							jsonSchema: { "type": "number" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:page",
+							create: _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema,
+							jsonSchema: { "type": "number" }
+						}
+					}],
 					result: {
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:result",
@@ -290,6 +319,27 @@ window.__ModuleLoader__.load({
 										"type": "null",
 										"const": null
 									}, { "type": "number" }] },
+									"seeders": {
+										"oneOf": [{
+											"type": "null",
+											"const": null
+										}, { "type": "number" }],
+										"description": "Swarm seeders when the feed reports them."
+									},
+									"leechers": {
+										"oneOf": [{
+											"type": "null",
+											"const": null
+										}, { "type": "number" }],
+										"description": "Swarm leechers when the feed reports them."
+									},
+									"downloads": {
+										"oneOf": [{
+											"type": "null",
+											"const": null
+										}, { "type": "number" }],
+										"description": "Completed downloads when the feed reports them."
+									},
 									"sourceUrl": { "type": "string" },
 									"submittable": { "type": "boolean" },
 									"dedupeKey": { "type": "string" }
@@ -313,7 +363,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 91,
+						"line": 107,
 						"column": 3
 					}
 				},
@@ -344,7 +394,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 106,
+						"line": 122,
 						"column": 3
 					}
 				},
@@ -365,6 +415,21 @@ window.__ModuleLoader__.load({
 							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:keyword",
 							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema,
 							jsonSchema: { "type": "string" }
+						}
+					}, {
+						name: "page",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:page",
+							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema,
+							jsonSchema: { "type": "number" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:page",
+							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema,
+							jsonSchema: { "type": "number" }
 						}
 					}],
 					result: {
@@ -399,6 +464,27 @@ window.__ModuleLoader__.load({
 										"type": "null",
 										"const": null
 									}, { "type": "number" }] },
+									"seeders": {
+										"oneOf": [{
+											"type": "null",
+											"const": null
+										}, { "type": "number" }],
+										"description": "Swarm seeders when the feed reports them."
+									},
+									"leechers": {
+										"oneOf": [{
+											"type": "null",
+											"const": null
+										}, { "type": "number" }],
+										"description": "Swarm leechers when the feed reports them."
+									},
+									"downloads": {
+										"oneOf": [{
+											"type": "null",
+											"const": null
+										}, { "type": "number" }],
+										"description": "Completed downloads when the feed reports them."
+									},
 									"sourceUrl": { "type": "string" },
 									"submittable": { "type": "boolean" },
 									"dedupeKey": { "type": "string" }
@@ -422,7 +508,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 86,
+						"line": 102,
 						"column": 3
 					}
 				},
@@ -458,7 +544,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 101,
+						"line": 117,
 						"column": 3
 					}
 				}
