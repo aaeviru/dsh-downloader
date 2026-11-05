@@ -1,8 +1,6 @@
 node_modules/
-lib/
-!bundle/
+/lib/
 *.log
 .DS_Store
-coverage/
-!bundle/
+/coverage/
 .env
