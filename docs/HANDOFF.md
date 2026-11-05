@@ -120,9 +120,7 @@ git -c credential.helper='!gh auth git-credential' push
   - `tsdown.config.ts` 要改用 harness 的 `clientBundle` 预设（照 `packages/experimental/hello-page/tsdown.config.ts`）；
   - 组件四态（loading / empty / list / error）要有测试，文案全部走 `locales.ts`，八个 `locale/*.json` 只放 meta；
   - 参考实现：`packages/experimental/hello-page`（`src/client/index.ts` 的座位注册、`locale/en.json` 形状）。
-- **Phase 4 第 3 步（客户端）已落地**：包改名为 `@deepseek-ai/dsh-experimental-downloader`（隔离门禁按包名前缀判断实验身份，旧名 `dsh-downloader` 会被当成正式包而拒绝引用生成的 `lib/typert.remote-client.js`）；`lib/client.js` 已产出（24.41 kB）。**组件四态测试仍缺**（上一版用例依据旧 API，已移除）。
-- **命令已随改名更新**：`pnpm --filter @deepseek-ai/dsh-experimental-downloader run bundle`。
-- **Phase 4 第 4 步未做**：客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
+- **Phase 4 第 3–4 步未做**：客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
 - 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4（进行中）。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
