@@ -31,7 +31,7 @@
     "./locale/*.json": "./locale/*.json"
   },
   "scripts": {
-    "bundle": "tsx ../../../scripts/generate-typert.ts && tsdown",
+    "bundle": "tsc -b . && tsx ../../../scripts/generate-typert.ts && tsdown",
     "watch": "tsdown --watch"
   },
   "dependencies": {
