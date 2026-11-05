@@ -173,8 +173,6 @@ window.__ModuleLoader__.load({
 			zod.z.object({ "alreadySubmitting": zod.z.literal(true).readonly() }),
 			zod.z.object({ "unsubmittable": zod.z.literal(true).readonly() })
 		]);
-		let _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema$value;
-		const _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_list_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
@@ -201,8 +199,6 @@ window.__ModuleLoader__.load({
 		});
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value ??= zod.z.string();
-		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema$value;
-		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
@@ -226,12 +222,8 @@ window.__ModuleLoader__.load({
 		const _deepseek_ai_dsh_experimental_downloader_download_status_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value ??= zod.z.object({ "state": zod.z.string() });
 		let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= zod.z.string();
-		let _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema$value;
-		const _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
-		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema$value;
-		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema$value ??= zod.z.number();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= zod.z.string();
 		const TYPERT_REMOTE = createTypertRemoteInfo({
@@ -264,29 +256,14 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 112,
+						"line": 100,
 						"column": 3
 					}
 				},
 				"download/list": {
 					service: "download",
 					invocation: { kind: "direct" },
-					parameters: [{
-						name: "page",
-						source: "json",
-						codec: {
-							mode: "strict",
-							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:page",
-							create: _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0$schema,
-							jsonSchema: { "type": "number" }
-						},
-						strictCodec: {
-							mode: "strict",
-							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:page",
-							create: _deepseek_ai_dsh_experimental_downloader_download_list_parameter_0_strict$schema,
-							jsonSchema: { "type": "number" }
-						}
-					}],
+					parameters: [],
 					result: {
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:result",
@@ -363,7 +340,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 107,
+						"line": 95,
 						"column": 3
 					}
 				},
@@ -394,7 +371,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 122,
+						"line": 110,
 						"column": 3
 					}
 				},
@@ -415,21 +392,6 @@ window.__ModuleLoader__.load({
 							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:keyword",
 							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema,
 							jsonSchema: { "type": "string" }
-						}
-					}, {
-						name: "page",
-						source: "json",
-						codec: {
-							mode: "strict",
-							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:page",
-							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1$schema,
-							jsonSchema: { "type": "number" }
-						},
-						strictCodec: {
-							mode: "strict",
-							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:page",
-							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_1_strict$schema,
-							jsonSchema: { "type": "number" }
 						}
 					}],
 					result: {
@@ -508,7 +470,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 102,
+						"line": 90,
 						"column": 3
 					}
 				},
@@ -544,7 +506,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 117,
+						"line": 105,
 						"column": 3
 					}
 				}
@@ -566,13 +528,20 @@ window.__ModuleLoader__.load({
 		}
 		/** Read one sortable value; missing values always sort last. */
 		function sortValue(candidate, key) {
+			if (key === "title") return candidate.title;
+			if (key === "size") return candidate.sizeBytes ?? -1;
 			if (key === "published") return candidate.publishedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(candidate.publishedAt);
 			return candidate[key] ?? -1;
 		}
 		/** Order candidates by the selected column. */
 		function order(candidates, sort) {
 			const direction = sort.descending ? -1 : 1;
-			return [...candidates].sort((left, right) => direction * (sortValue(left, sort.key) - sortValue(right, sort.key)));
+			return [...candidates].sort((left, right) => {
+				const a = sortValue(left, sort.key);
+				const b = sortValue(right, sort.key);
+				if (typeof a === "string" || typeof b === "string") return direction * String(a).localeCompare(String(b));
+				return direction * (a - b);
+			});
 		}
 		/** Translate every host submission outcome. */
 		function outcome(result, t) {
@@ -650,6 +619,7 @@ window.__ModuleLoader__.load({
 			});
 			const [keyword, setKeyword] = (0, react.useState)("");
 			const [page, setPage] = (0, react.useState)(1);
+			const pageSize = 20;
 			const load = (0, react.useCallback)(async (refresh) => {
 				setState({ kind: "loading" });
 				try {
@@ -659,7 +629,7 @@ window.__ModuleLoader__.load({
 							return;
 						}
 					}
-					const result = await download.list(page);
+					const result = await download.list();
 					setState(result.ok ? {
 						kind: "ready",
 						candidates: result.value
@@ -675,7 +645,7 @@ window.__ModuleLoader__.load({
 				setState({ kind: "loading" });
 				setPage(1);
 				try {
-					const result = await download.search(keyword, 1);
+					const result = await download.search(keyword);
 					setState(result.ok ? {
 						kind: "ready",
 						candidates: result.value
@@ -684,7 +654,9 @@ window.__ModuleLoader__.load({
 					setState({ kind: "error" });
 				}
 			}, [download, keyword]);
-			const visible = state.kind === "ready" ? order(state.candidates, sort) : [];
+			const ordered = state.kind === "ready" ? order(state.candidates, sort) : [];
+			const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
+			const visible = ordered.slice((page - 1) * pageSize, page * pageSize);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				style: {
 					padding: 24,
@@ -753,36 +725,20 @@ window.__ModuleLoader__.load({
 						})]
 					}),
 					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
-						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							style: {
 								display: "grid",
 								gridTemplateColumns: "1fr 120px 70px 70px 70px",
 								gap: 8,
 								padding: "6px 4px",
 								borderBottom: "1px solid var(--dsw-alias-border-l2)",
-								fontSize: 12,
-								color: "var(--dsw-alias-label-secondary)"
+								fontSize: 12
 							},
 							children: [
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("title") }),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("size") }),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("published") }),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("seeders") }),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("downloads") })
-							]
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							role: "group",
-							"aria-label": "sort",
-							style: {
-								display: "flex",
-								gap: 8,
-								margin: "8px 0"
-							},
-							children: [
+								"title",
+								"size",
 								"published",
 								"seeders",
-								"leechers",
 								"downloads"
 							].map((key) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 								type: "button",
@@ -792,6 +748,15 @@ window.__ModuleLoader__.load({
 										key,
 										descending: current.key === key ? !current.descending : true
 									}));
+								},
+								style: {
+									background: "none",
+									border: "none",
+									padding: 0,
+									textAlign: "left",
+									cursor: "pointer",
+									color: sort.key === key ? "var(--dsw-alias-label-primary)" : "var(--dsw-alias-label-secondary)",
+									fontSize: 12
 								},
 								children: [t(key), sort.key === key ? sort.descending ? " ↓" : " ↑" : ""]
 							}, key))
@@ -826,14 +791,19 @@ window.__ModuleLoader__.load({
 									},
 									children: "‹"
 								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 									"aria-live": "polite",
-									children: page
+									children: [
+										page,
+										" / ",
+										pageCount
+									]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 									type: "button",
+									disabled: page >= pageCount,
 									onClick: () => {
-										setPage((value) => value + 1);
+										setPage((value) => Math.min(pageCount, value + 1));
 									},
 									children: "›"
 								})

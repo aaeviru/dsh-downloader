@@ -15,7 +15,7 @@ afterEach(() => { vi.restoreAllMocks() })
 it('supplies mount defaults and validates timeout', () => {
   expect(name).toBe('dsh-downloader')
   expect(inject).toEqual(['tools', 'credentials', 'typert'])
-  expect(Config({})).toEqual({ endpoint: 'http://10.0.0.7:8082/jsonrpc', tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json', feedBase: 'https://sukebei.nyaa.net/feed/magnet', pageSize: 100 })
+  expect(Config({})).toEqual({ endpoint: 'http://10.0.0.7:8082/jsonrpc', tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json', feedUrl: 'https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0' })
   expect(() => Config({ timeoutMs: 0 })).toThrow()
 })
 

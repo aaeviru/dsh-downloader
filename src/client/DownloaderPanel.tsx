@@ -16,10 +16,12 @@ function formatPublished(publishedAt: string | null): string {
 }
 
 /** Columns the list can be ordered by. */
-type SortKey = 'published' | 'seeders' | 'leechers' | 'downloads'
+type SortKey = 'title' | 'size' | 'published' | 'seeders' | 'downloads'
 
 /** Read one sortable value; missing values always sort last. */
-function sortValue(candidate: Candidate, key: SortKey): number {
+function sortValue(candidate: Candidate, key: SortKey): number | string {
+  if (key === 'title') return candidate.title
+  if (key === 'size') return candidate.sizeBytes ?? -1
   if (key === 'published') return candidate.publishedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(candidate.publishedAt)
   return candidate[key] ?? -1
 }
@@ -27,7 +29,12 @@ function sortValue(candidate: Candidate, key: SortKey): number {
 /** Order candidates by the selected column. */
 function order(candidates: readonly Candidate[], sort: { key: SortKey; descending: boolean }): readonly Candidate[] {
   const direction = sort.descending ? -1 : 1
-  return [...candidates].sort((left, right) => direction * (sortValue(left, sort.key) - sortValue(right, sort.key)))
+  return [...candidates].sort((left, right) => {
+    const a = sortValue(left, sort.key)
+    const b = sortValue(right, sort.key)
+    if (typeof a === 'string' || typeof b === 'string') return direction * String(a).localeCompare(String(b))
+    return direction * (a - b)
+  })
 }
 
 /** Translate every host submission outcome. */
@@ -85,6 +92,7 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({ key: 'published', descending: true })
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(1)
+  const pageSize = 20
   const load = useCallback(async (refresh: boolean) => {
     setState({ kind: 'loading' })
     try {
@@ -92,7 +100,7 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
         const result = await download.refresh()
         if (!result.ok) { setState({ kind: 'error' }); return }
       }
-      const result = await download.list(page)
+      const result = await download.list()
       setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
@@ -103,13 +111,15 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
     setState({ kind: 'loading' })
     setPage(1)
     try {
-      const result = await download.search(keyword, 1)
+      const result = await download.search(keyword)
       setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
     }
   }, [download, keyword])
-  const visible = state.kind === 'ready' ? order(state.candidates, sort) : []
+  const ordered = state.kind === 'ready' ? order(state.candidates, sort) : []
+  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize))
+  const visible = ordered.slice((page - 1) * pageSize, page * pageSize)
   return (
     <section style={{ padding: 24, color: 'var(--dsw-alias-label-primary)', background: 'var(--dsw-alias-bg-base)' }}>
       <h1>{t('panel')}</h1>
@@ -130,16 +140,14 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
       {state.kind === 'error' && <div role="alert"><p>{t('error')}</p><button type="button" onClick={() => { void load(false) }}>{t('retry')}</button></div>}
       {state.kind === 'ready' && (state.candidates.length === 0 ? <p>{t('empty')}</p> : (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 70px 70px 70px', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--dsw-alias-border-l2)', fontSize: 12, color: 'var(--dsw-alias-label-secondary)' }}>
-            <span>{t('title')}</span><span>{t('size')}</span><span>{t('published')}</span><span>{t('seeders')}</span><span>{t('downloads')}</span>
-          </div>
-          <div role="group" aria-label="sort" style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
-            {(['published', 'seeders', 'leechers', 'downloads'] as const).map(key => (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 70px 70px 70px', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--dsw-alias-border-l2)', fontSize: 12 }}>
+            {(['title', 'size', 'published', 'seeders', 'downloads'] as const).map(key => (
               <button
                 key={key}
                 type="button"
                 aria-pressed={sort.key === key}
                 onClick={() => { setSort(current => ({ key, descending: current.key === key ? !current.descending : true })) }}
+                style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: sort.key === key ? 'var(--dsw-alias-label-primary)' : 'var(--dsw-alias-label-secondary)', fontSize: 12 }}
               >{t(key)}{sort.key === key ? (sort.descending ? ' ↓' : ' ↑') : ''}</button>
             ))}
           </div>
@@ -148,8 +156,8 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
           </ul>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
             <button type="button" disabled={page <= 1} onClick={() => { setPage(value => Math.max(1, value - 1)) }}>‹</button>
-            <span aria-live="polite">{page}</span>
-            <button type="button" onClick={() => { setPage(value => value + 1) }}>›</button>
+            <span aria-live="polite">{page} / {pageCount}</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => { setPage(value => Math.min(pageCount, value + 1)) }}>›</button>
           </div>
         </div>
       ))}

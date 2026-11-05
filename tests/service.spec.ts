@@ -27,37 +27,49 @@ function setup(entries: readonly Candidate[] = []) {
 }
 
 describe('DownloadService', () => {
-  it('B1/B2 searches through a keyword-scoped source for the requested page', async () => {
+  it('B1/B2 searches through a keyword-scoped source and caches its result', async () => {
+    const first = candidate('Alpha')
     const second = candidate('Beta')
-    const { service, deps, add, list } = setup([candidate('Alpha')])
+    const { service, deps, add } = setup([first])
     const scoped = vi.fn(async () => [second])
     deps.makeSource = () => ({ listCandidates: scoped })
-    expect(await service.search('beta', 3)).toEqual([second])
+    expect(await service.search('beta')).toEqual([second])
     expect(scoped).toHaveBeenCalledTimes(1)
-    expect(await service.listCandidates(1)).toEqual([second])
-    expect(list).not.toHaveBeenCalled()
+    expect(await service.listCandidates()).toEqual([second])
+    expect(scoped).toHaveBeenCalledTimes(1)
     expect(add).not.toHaveBeenCalled()
   })
 
-  it('B2 fetches every page request instead of caching', async () => {
-    const { service, list } = setup([candidate('first')])
-    expect(await service.listCandidates(1)).toHaveLength(1)
-    expect(await service.listCandidates(1)).toHaveLength(1)
-    expect(await service.listCandidates(2)).toHaveLength(1)
-    expect(list).toHaveBeenCalledTimes(3)
+  it('B1 falls back to the configured source when no keyword source is supplied', async () => {
+    const entry = candidate('Plain')
+    const { service, list } = setup([entry])
+    expect(await service.search('anything')).toEqual([entry])
+    expect(list).toHaveBeenCalledTimes(1)
   })
 
-  it('B4 resolves ids from the last page and rejects unknown ones', async () => {
-    const { service, list } = setup([candidate('known')])
-    await service.listCandidates(1)
+  it('B2 discovers once on first listing, including an empty result', async () => {
+    const { service, list, add } = setup()
+    expect(await service.listCandidates()).toEqual([])
+    expect(await service.listCandidates()).toEqual([])
+    expect(list).toHaveBeenCalledTimes(1)
+    expect(add).not.toHaveBeenCalled()
+    const entry = candidate('first')
+    const populated = setup([entry, entry])
+    expect(await populated.service.listCandidates()).toEqual([entry])
+    expect(populated.add).not.toHaveBeenCalled()
+  })
+
+  it('B4 rejects unknown ids with their identity without rediscovering a populated cache', async () => {
+    const { service, list, add } = setup([candidate('known')])
+    await service.listCandidates()
     await expect(service.add('missing')).rejects.toBeInstanceOf(UnknownCandidateError)
-    await expect(service.add('missing')).rejects.toMatchObject({ candidateId: 'missing' })
-    expect(list).toHaveBeenCalledTimes(3)
+    await expect(service.add('missing')).rejects.toMatchObject({ candidateId: 'missing', message: 'Unknown candidate: missing' })
+    expect(list).toHaveBeenCalledTimes(1)
+    expect(add).not.toHaveBeenCalled()
   })
 
-  it('B5 adds a candidate from the last page and preserves coordinator outcomes', async () => {
-    const { service, add, list } = setup([candidate('first')])
-    await service.listCandidates(1)
+  it('B5 discovers before adding and preserves all coordinator outcomes', async () => {
+    const { service, add, list } = setup([candidate('first'), candidate('blocked', false)])
     const gate = Promise.withResolvers<{ gid: string }>()
     add.mockReturnValueOnce(gate.promise)
     const pending = service.add('first')
@@ -66,20 +78,29 @@ describe('DownloadService', () => {
     gate.resolve({ gid: 'download' })
     expect(await pending).toEqual({ gid: 'download' })
     expect(await service.add('first')).toEqual({ alreadySubmitted: 'download' })
-    expect(list).toHaveBeenCalledTimes(1)
-  })
-
-  it('B5 falls back to page one when the candidate is not on the last page', async () => {
-    const { service, add, list } = setup([candidate('later')])
-    await expect(service.add('later')).resolves.toEqual({ gid: 'download' })
+    expect(await service.add('blocked')).toEqual({ unsubmittable: true })
     expect(list).toHaveBeenCalledTimes(1)
     expect(add).toHaveBeenCalledTimes(1)
   })
 
-  it('B3 refresh delegates to the coordinator', async () => {
-    const { service, list, add } = setup([candidate('first')])
-    list.mockResolvedValueOnce([candidate('first'), candidate('new'), candidate('blocked', false)])
-    expect(await service.refresh()).toEqual({ discovered: 3, added: 2, skipped: 0, unsubmittable: 1 })
+  it('B4/B5 rediscovers an empty cache before adding', async () => {
+    const { service, list } = setup()
+    await expect(service.add('later')).rejects.toMatchObject({ candidateId: 'later' })
+    list.mockResolvedValue([candidate('later')])
+    expect(await service.add('later')).toEqual({ gid: 'download' })
+    expect(list).toHaveBeenCalledTimes(2)
+  })
+
+  it('B3 refresh shares submission records and replaces the cache with a second discovery', async () => {
+    const first = candidate('first')
+    const next = candidate('next')
+    const { service, list, add } = setup([first])
+    await service.add('first')
+    list.mockResolvedValueOnce([first, candidate('new'), candidate('blocked', false)])
+      .mockResolvedValueOnce([next, next])
+    expect(await service.refresh()).toEqual({ discovered: 3, added: 1, skipped: 1, unsubmittable: 1 })
+    expect(await service.listCandidates()).toEqual([next])
+    expect(list).toHaveBeenCalledTimes(3)
     expect(add).toHaveBeenCalledTimes(2)
   })
 

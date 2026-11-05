@@ -17,12 +17,12 @@ const defaultTransport = (url, signal) => fetch(url, { signal });
  */
 export function createRssSource(options) {
     const transport = options.transport ?? defaultTransport;
-    const sourceId = new URL(options.feedBase).host;
+    const sourceId = new URL(options.feedUrl).host;
     const requestUrl = () => {
-        const url = new URL(`${options.feedBase}/p/${String(options.page)}`);
-        url.searchParams.set('limit', String(options.limit));
-        if (options.keyword !== undefined && options.keyword.trim() !== '')
-            url.searchParams.set('q', options.keyword);
+        if (options.keyword === undefined || options.keyword.trim() === '')
+            return options.feedUrl;
+        const url = new URL(options.feedUrl);
+        url.searchParams.set('q', options.keyword);
         return url.toString();
     };
     return {

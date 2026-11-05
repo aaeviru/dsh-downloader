@@ -1,6 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { afterEach, expect, it, vi } from 'vitest'
-import { DownloadRemote, feedSource } from '../src/remote.ts'
+import { DownloadRemote } from '../src/remote.ts'
 import { createDownloadService } from '../src/service.ts'
 import { createPersistentSubmitStore } from '../src/store.ts'
 
@@ -34,12 +34,12 @@ it('registers the download namespace and delegates every method to the shared se
   expect(DownloadRemote.inject).toEqual(['typert', 'credentials'])
   expect(provide).toHaveBeenCalledWith('download', remote, undefined)
   expect(remote.typertRemote.namespace).toBe('download')
-  expect(await remote.search('term', 2)).toEqual([])
-  expect(await remote.list(3)).toEqual([])
+  expect(await remote.search('term')).toEqual([])
+  expect(await remote.list()).toEqual([])
   expect(await remote.add('candidate')).toEqual({ gid: 'gid' })
   expect(await remote.status('gid')).toEqual({ state: 'active' })
   expect(await remote.refresh()).toEqual(await shared.refresh.mock.results[0]!.value)
-  expect(shared.search).toHaveBeenCalledWith('term', 2)
+  expect(shared.search).toHaveBeenCalledWith('term')
   expect(shared.listCandidates).toHaveBeenCalledOnce()
   expect(shared.add).toHaveBeenCalledWith('candidate')
   expect(shared.status).toHaveBeenCalledWith('gid')
@@ -48,16 +48,20 @@ it('registers the download namespace and delegates every method to the shared se
   expect(flush).toHaveBeenCalledOnce()
 })
 
-it('builds a page-scoped feed source', async () => {
-  const seen: string[] = []
-  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-    seen.push(url)
-    return { ok: true, status: 200, text: async () => '<rss><channel></channel></rss>' }
-  }))
-  try {
-    await feedSource({ feedBase: 'https://feeds.example.test/feed/magnet', pageSize: 25, timeoutMs: 1000 })('query', 4).listCandidates()
-  } finally {
-    vi.unstubAllGlobals()
-  }
-  expect(seen[0]).toBe('https://feeds.example.test/feed/magnet/p/4?limit=25&q=query')
+it('hands the service a keyword-scoped source factory', async () => {
+  vi.mocked(createPersistentSubmitStore).mockResolvedValue({ has: () => false, list: () => [], record: () => {}, flush: async () => {} })
+  vi.mocked(createDownloadService).mockReturnValue({
+    search: async () => [], listCandidates: async () => [], add: async () => ({ gid: 'g' }),
+    status: async () => ({ state: 'active' }), refresh: async () => ({ discovered: 0, added: 0, skipped: 0, unsubmittable: 0 }),
+  })
+  const effects: Promise<unknown>[] = []
+  const ctx = {
+    reflect: { provide: vi.fn() }, credentials: { resolve: vi.fn(async () => undefined) },
+    effect(callback: () => unknown) { effects.push(Promise.resolve(callback())) },
+  } as unknown as Context
+  new DownloadRemote(ctx, { endpoint: 'http://127.0.0.1:1/jsonrpc', tokenRef: 'T', timeoutMs: 1000, storePath: '/tmp/remote-spec.json', feedUrl: 'https://feeds.example.test/?page=rss' })
+  await Promise.all(effects)
+  const deps = vi.mocked(createDownloadService).mock.calls.at(-1)?.[0]
+  expect(deps?.makeSource).toBeTypeOf('function')
+  expect(deps?.makeSource?.('term')).toMatchObject({ listCandidates: expect.any(Function) })
 })

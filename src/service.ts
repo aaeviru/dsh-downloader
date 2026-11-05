@@ -14,8 +14,8 @@ export class UnknownCandidateError extends Error {
 }
 
 export interface DownloadService {
-  search(keyword: string, page: number): Promise<readonly Candidate[]>
-  listCandidates(page: number): Promise<readonly Candidate[]>
+  search(keyword: string): Promise<readonly Candidate[]>
+  listCandidates(): Promise<readonly Candidate[]>
   add(candidateId: string): Promise<SubmitResult>
   status(gid: string): Promise<{ state: string }>
   refresh(): Promise<RefreshResult>
@@ -24,38 +24,41 @@ export interface DownloadService {
 /** Create the service over the three injected seams. */
 export function createDownloadService(deps: {
   readonly source: Source
-  /** Build a source for one keyword and page; defaults to the configured source. */
-  readonly makeSource?: (keyword: string, page: number) => Source
+  /** Build a source scoped to one search keyword; defaults to the configured source. */
+  readonly makeSource?: (keyword: string) => Source
   readonly downloader: Downloader
   readonly store: SubmitStore
 }): DownloadService {
   const coordinator = createDownloadCoordinator(deps)
-  // Only `add` reads this: pages are always fetched fresh.
-  let lastPage: readonly Candidate[] = []
+  let cache: readonly Candidate[] | undefined
 
-  async function fetchPage(keyword: string, page: number): Promise<readonly Candidate[]> {
-    const source = (deps.makeSource ?? (() => deps.source))(keyword, page)
-    lastPage = dedupeCandidates(await source.listCandidates())
-    return lastPage
+  async function discover(): Promise<readonly Candidate[]> {
+    cache = dedupeCandidates(await deps.source.listCandidates())
+    return cache
   }
 
   return {
-    search: (keyword, page) => fetchPage(keyword, page),
-    listCandidates: page => fetchPage('', page),
+    async search(keyword) {
+      const candidates = await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates()
+      cache = dedupeCandidates(candidates)
+      return cache
+    },
+    async listCandidates() {
+      return cache ?? discover()
+    },
     async add(candidateId) {
-      let candidate = lastPage.find(entry => entry.id === candidateId)
-      if (candidate === undefined) {
-        await fetchPage('', 1)
-        candidate = lastPage.find(entry => entry.id === candidateId)
-      }
-      if (candidate === undefined) throw new UnknownCandidateError(candidateId)
+      const candidates = !cache || cache.length === 0 ? await discover() : cache
+      const candidate = candidates.find(candidate => candidate.id === candidateId)
+      if (!candidate) throw new UnknownCandidateError(candidateId)
       return coordinator.submit(candidate)
     },
     status(gid) {
       return deps.downloader.status(gid)
     },
-    refresh() {
-      return coordinator.refresh()
+    async refresh() {
+      const result = await coordinator.refresh()
+      await discover()
+      return result
     },
   }
 }
