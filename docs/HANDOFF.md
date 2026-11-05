@@ -213,3 +213,21 @@ cd /home/aaevi/projects/dsh-downloader
 即：客户端 bundle 被加载 → 侧栏出现 `aria-label="Downloader"` 的图标 → 点击后面板渲染出标题与描述 → `ctx.remote.download.list()` 真实走通（host 侧暂无 RSS source，故显示空态）→ 无 page error。
 
 **首启弹窗不是 Escape 能关的**：它是 "Preview Notice"，必须点 `Continue` 按钮。文档 09 写的「两个弹窗都能用 Escape 关掉」对我们这个版本不成立；稳健写法是循环：有遮罩时优先点 `Continue|Got it|Close`，没有再按 Escape。
+
+## 12. 桌面安装验收（2026-11-05，通过）
+
+在 Windows 桌面版（0.2.x）上 `plugin_manager install_bundle` 安装 `F:\codex-work\dsh-downloader\bundle`：
+
+```json
+{"application": "applied", "warnings": []}
+```
+
+- 安装形态：`link:F:/codex-work/dsh-downloader/bundle`（符号链接）
+- `Config.listConfigs` 能查到 entry，`status: "schema"`，四个字段与默认值全部正确
+- 两个座位都在且 `active`：`sidebar.panellist` 有 `downloader(40)`，`main` 有 `downloader`
+- 原有工具未被破坏；新增的正好 `download_search` / `download_add` / `download_status`
+- 功能实测：`download_search { keyword: "test" }` → `Found 0 candidates.`（host 服务真实被调用；空结果对应「RSS source 尚未接线」这一已知缺口）
+
+**两个后续事项**：
+1. `version: "0.0.0"` 不影响 profile 安装，但会让 `verify-npm-install-layout` 之类的仓库门禁失败，进正式流程前要改成真实版本号。
+2. 提交构建产物后必须核对 `git ls-files bundle | wc -l` 与实际文件数（曾因 `.gitignore` 的 `lib/` 未锚定根目录，`bundle/lib/**` 被整体忽略）。
