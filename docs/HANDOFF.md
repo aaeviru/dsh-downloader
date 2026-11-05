@@ -23,26 +23,48 @@
 
 注意：include 的 patch 是**按 key 浅替换**，所以该条目必须连带重复 `mode` 与 `workspaceRoot`，否则会被默认值覆盖成 `read-only`。
 
-推送需要 gh 凭据助手（沙箱内没有 git 凭据）：
+### 依赖安装：只能在 harness 根目录跑
+
+新依赖写进 `package.json` 后，**在 harness 根目录**执行：
+
+```sh
+cd /home/aaevi/projects/deepseek-harness
+pnpm install --filter dsh-downloader
+```
+
+理由：`@deepseek-ai/cordis` 用的是 `workspace:~` 协议，只在 pnpm workspace 内解析。符号链接让这个包**本来就是 workspace 成员**（`pnpm list -r` 会列出 `dsh-downloader@0.0.0 ... (PRIVATE)`），根目录安装会把它当普通成员处理，依赖以 pnpm 软链接进 `node_modules`。
+
+**不要在 `~/projects/dsh-downloader` 里跑任何安装命令**：`npm install` 直接 `EUNSUPPORTEDPROTOCOL: workspace:~`，`pnpm install` 因为没有 workspace 定义也会失败。手工建软链或拷贝目录是错的做法（曾试过一次，已废弃）。
+
+**副作用**：根目录安装会在 `pnpm-lock.yaml` 增加一条 importer 记录（`packages/experimental/dsh-downloader:`）。**这个改动永远不要提交** —— CI 上没有该目录，`--frozen-lockfile` 会失败。`pnpm-lock.yaml` 的 `M` 状态是预期的（`hello-page` 那条也是同样来源）。
+
+### 推送
+
+需要 gh 凭据助手（沙箱内没有 git 凭据）：
 
 ```sh
 git -c credential.helper='!gh auth git-credential' push
 ```
 
-## 2. 两条已踩过的路径坑
+## 2. 已踩过的路径坑
 
 1. **`tsconfig.json` 只能用绝对路径**。TypeScript 不解析符号链接，同一份配置无法同时对「符号链接视角」和「真身视角」成立；相对路径在其中一个视角必然解析到错误位置。
 2. **`tsdown.config.ts` 不能用仓库内相对路径**。它从真身目录加载，`../../client/tsdown.client.ts` 会解析到 `~/client`。改为从 `DSH_CHECKOUT`（默认 `/home/aaevi/projects/deepseek-harness`）定位构建预设。
+3. **派 Codex 必须以真身目录为 cwd**。它的 `sandbox_mode = "workspace-write"` 以启动 cwd 为唯一写根，`~/.codex/config.toml` 只 trust 了 `deepseek-harness`；从 harness 启动时写入真身会被判成「项目外」，报 `Read-only file system`。用 `cwd=/home/aaevi/projects/dsh-downloader` 启动即可。
 
-换机器、改目录名、移植到 Windows 时，要同步改这三处：`tsconfig.json` 的 5 条绝对路径、`tsdown.config.ts` 的默认兜底值、profile 白名单里的路径。
+换机器、改目录名、移植到 Windows 时，要同步改这四处：`tsconfig.json` 的 5 条绝对路径、`tsdown.config.ts` 的默认兜底值、profile 白名单里的路径、以及 Codex 的启动 cwd。
 
 ## 3. 已完成
 
-- 包骨架：`package.json`（`dsh-downloader@0.0.0`）、`tsconfig.json`、`tsdown.config.ts`、`src/index.ts`（空 `apply`）。
-- 六个任务 issue：`#2` Phase 1a、`#3` Phase 1b、`#4` Phase 1c、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
-- 任务书原文：`docs/tasks/phase-*.md`，每份末尾链接对应 issue。
-- `[CONTRACT v1]` 已发布在 [#2 的评论](https://github.com/aaeviru/dsh-downloader/issues/2#issuecomment-6639655269)，状态 `approval: PENDING`。
-- **代码层面：除了空骨架，一行业务代码都没写。**
+- 包骨架：`package.json`、`tsconfig.json`、`tsdown.config.ts`、`src/index.ts`（空 `apply`）。
+- `[CONTRACT v1]` 已批准（[#2 comment 6656215906](https://github.com/aaeviru/dsh-downloader/issues/2#issuecomment-6656215906)）。
+- **Phase 1a 已实现并提交**：`6b8e6e2 feat: parse RSS feeds into normalized candidates`。
+  - `src/candidate.ts`：`Candidate`、`normalizeInfoHash`（hex + base32）、`dedupeCandidates`
+  - `src/rss.ts`：`RssParseError`、`parseRssFeed`（RSS 2.0 / RSS 1.0 RDF / Atom）
+  - `tests/`：3 个 spec、23 条用例、9 个 fixture
+  - `docs/tasks/phase-1a-fixtures.md`：fixture 清单、补充用例 B11–B16、把 10 个含糊点定死
+- `[REVIEW]` 已发（[#2 comment 6657197425](https://github.com/aaeviru/dsh-downloader/issues/2#issuecomment-6657197425)），B1–B16 全部 VERIFIED。**等待人类 `[DECISION]`。**
+- 六个任务 issue：`#2` Phase 1a（已实现）、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
@@ -51,12 +73,13 @@ git -c credential.helper='!gh auth git-credential' push
 - Worker 自述不算证据；Build/lint/typecheck 通过只证明静态条件；单元测试不证明集成行为。
 - 失败分类：`CODE_FAILURE` / `INFRA_FAILURE` / `BASELINE_FAILURE` / `SPEC_AMBIGUOUS` / `POLICY`。修复上限 2 轮后熔断。
 - 默认单 Agent，只有实测收益才增加角色。
+- **任务书用门禁报错原文**：一旦精确到「文件 + 行 + 报错原文 + 修法」，执行质量很高；模糊描述会在门禁上反复翻车（见 `aaeviru/dsh-plugin-docs` 的 08）。
 
 ## 5. 环境事实
 
 - aria2：`10.0.0.7:8082`（RFC1918 内网），从 WSL **TCP 可达**；`aria2.getVersion` 返回 `{"error":{"code":1,"message":"Unauthorized"}}` → 服务在跑，缺 token。
 - token 来源：`ARIA2_TOKEN` 环境变量，或 `ctx.credentials`（存储优先 → env → `.env`，文件为 `~/.dsh/.credentials.yaml`）。**不要把 token 写进代码、日志、issue 或仓库。**
-- 示例 RSS：`https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0`。
+- 示例 RSS：`https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0`。一次真实抓取的 75 条结果在 `~/.dsh/attachments/` 内（B14 证据来自全量；入库 fixture 只取 6 条）。
 
 ## 6. 验收命令（执行者自检，验收方必须重跑）
 
@@ -65,26 +88,36 @@ cd /home/aaevi/projects/deepseek-harness
 pnpm vitest run packages/experimental/dsh-downloader/tests/
 ./node_modules/.bin/tsc -b packages/experimental/dsh-downloader
 pnpm --filter dsh-downloader run bundle
+pnpm exec oxlint -c .oxlintrc.json packages/experimental/dsh-downloader
 ```
 
-门禁事实：测试 glob 是 `packages/*/*/tests/**/*.spec.{ts,tsx}`（符号链接目录会被扫到）；覆盖率按文件 100%（`packages/*/*/src/**`）。
+覆盖率（仓库用 v8，按文件 100%）：
+
+```sh
+cd /home/aaevi/projects/dsh-downloader
+/home/aaevi/projects/deepseek-harness/node_modules/.bin/vitest run --coverage --coverage.include='src/**'
+```
+
+门禁事实：测试 glob 是 `packages/*/*/tests/**/*.spec.{ts,tsx}`（符号链接目录会被扫到）；覆盖率按文件 100%（`packages/*/*/src/**`）；lint 是 **oxlint**（`pnpm exec oxlint -c .oxlintrc.json`），仓库没有 prettier/eslint 配置。
+
+已知限制：**Codex worker 在其沙箱内跑不了上面第一条**（harness 检出只读，Vite 写 `node_modules/.vite-temp` 报 EROFS）。它用仓库内等价命令自检并如实标注，权威结果由验收方重跑 —— 这是既定流程，不是缺陷。
 
 ## 7. 下一步
 
-1. 人类在 #2 批准 `[CONTRACT v1]`。
-2. 派 Codex 实现 Phase 1a，产物回 `[IMPLEMENTATION]`。
-3. 独立重跑上面三条命令，回 `[REVIEW]`。
-4. 之后依次 1b（可先不接真实 NAS，全 stub）→ 1c（真机验收需人类同意）→ Phase 2/3/4。
+1. 人类在 #2 对 `[REVIEW]` 回 `[DECISION]`。
+2. 派 Codex 做 Phase 1b（#3）：可先全 stub，不接真实 NAS。
+3. 之后 1c（#4，真机验收需人类同意）→ Phase 2（#5）→ Phase 3（#6）→ Phase 4（#7）。
 
-## 8. 明确未验证的
+## 8. 明确未验证的 / 已知缺口
 
-- 真实 RSS 站点的响应（`sukebei.nyaa.si` 在 WSL 内是否可访问未测）。
+- **bundle 产物仍是 0.51 kB**：`src/candidate.ts` 与 `src/rss.ts` 未从 `src/index.ts` 导出，Phase 1a 是源码级交付；插件接线在后续阶段。别把「bundle 通过」当成新代码已进产物。
+- 真实 RSS 站点的响应（`sukebei.nyaa.si` 在 WSL 内的实时可达性未测；上次抓到的是快照）。
 - 真实 aria2 提交（需 token + 人类同意，避免向 NAS 塞测试任务）。
 - Desktop 安装形态（`plugin_manager install_bundle`）。
 - `--patch + dev:web` 的端到端加载：需要起第二个服务，未执行。
 
 ## 9. 相关仓库
 
-- [dsh-plugin-docs](https://github.com/aaeviru/dsh-plugin-docs) — 包骨架、门禁、Desktop 安装的踩坑记录。
+- [dsh-plugin-docs](https://github.com/aaeviru/dsh-plugin-docs) — 包骨架、门禁顺序、Codex 协作流程的踩坑记录（08 协作流程、10 坑位速查必读）。
 - [hello-nodejs](https://github.com/aaeviru/hello-nodejs) — 已验证的 hello-page 骨架参照。
 - [brainstorming](https://github.com/aaeviru/brainstorming) — 协作协议与实证案例。
