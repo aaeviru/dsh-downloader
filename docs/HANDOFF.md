@@ -97,9 +97,9 @@ git -c credential.helper='!gh auth git-credential' push
   - `package.json` 增加 `./typert` 与 `./remote` 导出；`vitest.config.ts` 复用 harness 的 standard-decorator 预转换插件
   - 107 条测试、12 个源文件 100% 覆盖、bundle 20.23 kB
 - **生成 Typert 产物的阻塞点（下一步要做的事）**：`pnpm exec tsx scripts/generate-typert.ts` 能跑（39 个包），但**不包含本包**。原因：分析器按包查找 `tsconfig.host.json` / `tsconfig.client.json` 面配置（`packages/typert/generator/src/analyzer.ts:344`），而本包只有一个 `tsconfig.json`。要接通需要三步：
-  1. 本包改成 solution 形状：`tsconfig.json` 只留 `files: []` + references，实际工程搬到 `tsconfig.host.json`（外加 Phase 4 客户端的 `tsconfig.client.json`）；
-  2. 在 harness 的 `tsconfig.host.json` references 里加 `{ "path": "./packages/experimental/dsh-downloader" }`（改 harness 仓库，一行）；
-  3. 重跑生成器，确认 `lib/typert.host.*` 与 `lib/typert.remote-client.*` 落到本包，再重跑 `tsc -b` 与 `bundle`。
+  1. ✅ **已做**：本包已改成 solution 形状 —— `tsconfig.json` 只有 `files: []` + references，实际工程在 `tsconfig.host.json`；`tsc -b` 仍 exit 0，107 条测试、bundle 20.23 kB 均不变。
+  2. ❌ **试过但无效**：在 harness 的 `tsconfig.host.json` references 里加 `./packages/experimental/dsh-downloader`，以及改成指向 `.../tsconfig.host.json` 叶配置，两次重跑生成器都仍是「39 个包」，不含本包。改动已回退，harness 保持原样。
+  3. 下一步要读 `packages/typert/generator/src/analyzer.ts` 的 `discoverPackages`，弄清它到底按什么枚举包（很可能是遍历 `<root>/packages` 的**真实目录**，符号链接进来的包不在其列）。若是这个原因，可选：(a) 把包做成真实目录（放弃独立仓）；(b) 给生成器加一个显式的包清单配置；(c) 换一条不依赖 typert 生成的浏览器通道。
 - **Phase 4 第 3–4 步未做**：客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
 - 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4（进行中）。
 

@@ -1,27 +1,8 @@
 {
-  "extends": "/home/aaevi/projects/deepseek-harness/tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "lib/types"
-  },
-  "include": [
-    "src"
-  ],
+  "files": [],
   "references": [
     {
-      "path": "/home/aaevi/projects/deepseek-harness/vendor/cordis"
-    },
-    {
-      "path": "/home/aaevi/projects/deepseek-harness/packages/core/tools"
-    },
-    {
-      "path": "/home/aaevi/projects/deepseek-harness/packages/credentials/credentials"
-    },
-    {
-      "path": "/home/aaevi/projects/deepseek-harness/vendor/schemastery"
-    },
-    {
-      "path": "/home/aaevi/projects/deepseek-harness/packages/typert/protocol"
+      "path": "./tsconfig.host.json"
     }
   ]
 }
