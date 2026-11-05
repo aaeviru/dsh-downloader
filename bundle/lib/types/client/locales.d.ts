@@ -17,6 +17,10 @@ export declare const en: {
     readonly unsubmittable: "Cannot submit this candidate.";
     readonly submitError: "Unable to submit this candidate.";
     readonly unknownSize: "Unknown size";
+    readonly published: "Published";
+    readonly seeders: "Seeders";
+    readonly leechers: "Leechers";
+    readonly downloads: "Downloads";
 };
 /** Typed panel dictionary keys. */
 export type DownloaderKey = keyof typeof en;

@@ -142,7 +142,7 @@ describe('parseRssFeed', () => {
       infoHash: null,
       magnetUri: null,
       torrentUrl: null,
-      sizeBytes: null,
+      sizeBytes: null, seeders: null, leechers: null, downloads: null,
       sourceUrl: 'https://sukebei.nyaa.si/view/1',
       submittable: false,
       dedupeKey: 'url:https://sukebei.nyaa.si/view/1',

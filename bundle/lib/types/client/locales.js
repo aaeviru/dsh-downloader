@@ -17,6 +17,10 @@ export const en = {
     unsubmittable: 'Cannot submit this candidate.',
     submitError: 'Unable to submit this candidate.',
     unknownSize: 'Unknown size',
+    published: 'Published',
+    seeders: 'Seeders',
+    leechers: 'Leechers',
+    downloads: 'Downloads',
 };
 /** Chinese panel copy. */
 export const zh = {
@@ -35,5 +39,9 @@ export const zh = {
     unsubmittable: '无法提交此候选项。',
     submitError: '提交此候选项失败。',
     unknownSize: '大小未知',
+    published: '发布',
+    seeders: '做种',
+    leechers: '下载中',
+    downloads: '完成',
 };
 //# sourceMappingURL=locales.js.map

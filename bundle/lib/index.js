@@ -249,6 +249,11 @@ function text(value) {
 function list(value) {
 	return Array.isArray(value) ? value : [value];
 }
+function count(value) {
+	const raw = text(value);
+	if (raw === null || !/^\d+$/.test(raw)) return null;
+	return Number(raw);
+}
 function size(value) {
 	const match = /^(\d+(?:\.\d+)?)\s*(b|kib|mib|gib|tib)$/i.exec(value ?? "");
 	if (!match) return null;
@@ -290,6 +295,9 @@ function candidate(item, sourceId) {
 		magnetUri,
 		torrentUrl,
 		sizeBytes: size(text(field(item, "nyaa:size"))),
+		seeders: count(field(item, "nyaa:seeders")),
+		leechers: count(field(item, "nyaa:leechers")),
+		downloads: count(field(item, "nyaa:downloads")),
 		sourceUrl,
 		submittable: magnetUri !== null || torrentUrl !== null,
 		dedupeKey

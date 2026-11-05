@@ -44,3 +44,17 @@ it('shows the error state when the host call fails', async () => {
   render(<DownloaderPanel t={t} download={namespace(async () => ({ ok: false, error: { code: 'x', message: 'x' } }))} />)
   expect(await screen.findByText('error')).toBeTruthy()
 })
+
+it('shows seeders, leechers, downloads and orders by the clicked column', async () => {
+  const older = candidate({ id: 'a', title: 'Older', publishedAt: '2026-11-01T00:00:00.000Z', seeders: 1, leechers: 9, downloads: 100 })
+  const newer = candidate({ id: 'b', title: 'Newer', publishedAt: '2026-11-05T00:00:00.000Z', seeders: 50, leechers: 2, downloads: 3 })
+  render(<DownloaderPanel t={t} download={namespace(async () => ({ ok: true, value: [older, newer] }))} />)
+  await screen.findByText('Newer')
+  const titles = () => Array.from(document.querySelectorAll('li span:first-child')).map(node => node.textContent)
+  expect(document.body.textContent).toContain('seeders: 50')
+  expect(titles()[0]).toBe('Newer')
+  fireEvent.click(screen.getByRole('button', { name: /seeders/i }))
+  expect(titles()[0]).toBe('Newer')
+  fireEvent.click(screen.getByRole('button', { name: /seeders/i }))
+  expect(titles()[0]).toBe('Older')
+})

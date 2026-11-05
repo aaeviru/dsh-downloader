@@ -466,6 +466,16 @@ window.__ModuleLoader__.load({
 		}, zod.z);
 		//#endregion
 		//#region src/client/DownloaderPanel.tsx
+		/** Read one sortable value; missing values always sort last. */
+		function sortValue(candidate, key) {
+			if (key === "published") return candidate.publishedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(candidate.publishedAt);
+			return candidate[key] ?? -1;
+		}
+		/** Order candidates by the selected column. */
+		function order(candidates, sort) {
+			const direction = sort.descending ? -1 : 1;
+			return [...candidates].sort((left, right) => direction * (sortValue(left, sort.key) - sortValue(right, sort.key)));
+		}
 		/** Translate every host submission outcome. */
 		function outcome(result, t) {
 			if ("gid" in result) return t("submitted").replace("{gid}", result.gid);
@@ -477,6 +487,7 @@ window.__ModuleLoader__.load({
 		function CandidateRow({ candidate, t, download }) {
 			const [pending, setPending] = (0, react.useState)(false);
 			const [message, setMessage] = (0, react.useState)("");
+			const published = candidate.publishedAt === null ? "—" : candidate.publishedAt.slice(0, 10);
 			async function submit() {
 				setPending(true);
 				try {
@@ -504,6 +515,29 @@ window.__ModuleLoader__.load({
 						}).format(candidate.sizeBytes)
 					}),
 					" ",
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+						style: { color: "var(--dsw-alias-label-secondary)" },
+						children: published
+					}),
+					" ",
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+						t("seeders"),
+						": ",
+						candidate.seeders ?? "—"
+					] }),
+					" ",
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+						t("leechers"),
+						": ",
+						candidate.leechers ?? "—"
+					] }),
+					" ",
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+						t("downloads"),
+						": ",
+						candidate.downloads ?? "—"
+					] }),
+					" ",
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 						type: "button",
 						disabled: !candidate.submittable || pending,
@@ -523,6 +557,10 @@ window.__ModuleLoader__.load({
 		/** Render loading, empty, candidate and recoverable error states. */
 		function DownloaderPanel({ t, download }) {
 			const [state, setState] = (0, react.useState)({ kind: "loading" });
+			const [sort, setSort] = (0, react.useState)({
+				key: "published",
+				descending: true
+			});
 			const load = (0, react.useCallback)(async (refresh) => {
 				setState({ kind: "loading" });
 				try {
@@ -578,17 +616,41 @@ window.__ModuleLoader__.load({
 							children: t("retry")
 						})]
 					}),
-					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
+					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						role: "group",
+						"aria-label": "sort",
+						style: {
+							display: "flex",
+							gap: 8,
+							margin: "8px 0"
+						},
+						children: [
+							"published",
+							"seeders",
+							"leechers",
+							"downloads"
+						].map((key) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+							type: "button",
+							"aria-pressed": sort.key === key,
+							onClick: () => {
+								setSort((current) => ({
+									key,
+									descending: current.key === key ? !current.descending : true
+								}));
+							},
+							children: [t(key), sort.key === key ? sort.descending ? " ↓" : " ↑" : ""]
+						}, key))
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
 						style: {
 							listStyle: "none",
 							padding: 0
 						},
-						children: state.candidates.map((candidate) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CandidateRow, {
+						children: order(state.candidates, sort).map((candidate) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CandidateRow, {
 							candidate,
 							t,
 							download
 						}, candidate.id))
-					}))
+					})] }))
 				]
 			});
 		}
@@ -632,7 +694,11 @@ window.__ModuleLoader__.load({
 			alreadySubmitting: "Already submitting.",
 			unsubmittable: "Cannot submit this candidate.",
 			submitError: "Unable to submit this candidate.",
-			unknownSize: "Unknown size"
+			unknownSize: "Unknown size",
+			published: "Published",
+			seeders: "Seeders",
+			leechers: "Leechers",
+			downloads: "Downloads"
 		};
 		/** Chinese panel copy. */
 		const zh = {
@@ -650,7 +716,11 @@ window.__ModuleLoader__.load({
 			alreadySubmitting: "正在提交。",
 			unsubmittable: "无法提交此候选项。",
 			submitError: "提交此候选项失败。",
-			unknownSize: "大小未知"
+			unknownSize: "大小未知",
+			published: "发布",
+			seeders: "做种",
+			leechers: "下载中",
+			downloads: "完成"
 		};
 		//#endregion
 		//#region src/client/mount.ts
