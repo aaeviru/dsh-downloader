@@ -134,7 +134,7 @@ describe('aria2', () => {
       return fetch(request.url, { method: 'POST', ...request })
     }
     expect(await client('', 1000, transport).getVersion()).toMatchObject({ version: '1.37' })
-    expect(requests[0]).toMatchObject({ params: ['token:'] })
+    expect(requests[0]).toMatchObject({ params: [] })
   })
   it('transport rejection has status zero and does not expose its error', async () => {
     respond = response => response.destroy()

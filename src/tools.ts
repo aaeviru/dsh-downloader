@@ -51,22 +51,24 @@ export function createDownloadTools(service: DownloadService, options: {
             outcome: { type: 'string', required: true, enum: ['added', 'alreadySubmitted', 'alreadySubmitting', 'unsubmittable'] },
             gid: { oneOf: [{ type: 'string' }, { type: 'null' }], required: true },
             triggeredAt: { type: 'string', required: true },
+            callId: { type: 'string', required: true },
           },
         },
         render: (_args, value) => [{ type: 'text', text: `Download submission: ${value.outcome}.` }],
       },
-      async execute({ candidateId }) {
+      async execute({ candidateId }, exec) {
         const triggeredAt = options.clock().toISOString()
         const result = await service.add(candidateId)
-        if ('gid' in result) return { candidateId, outcome: 'added' as const, gid: result.gid, triggeredAt }
+        if ('gid' in result) return { candidateId, outcome: 'added' as const, gid: result.gid, triggeredAt, callId: exec.callId }
         if ('alreadySubmitted' in result) {
-          return { candidateId, outcome: 'alreadySubmitted' as const, gid: result.alreadySubmitted, triggeredAt }
+          return { candidateId, outcome: 'alreadySubmitted' as const, gid: result.alreadySubmitted, triggeredAt, callId: exec.callId }
         }
         return {
           candidateId,
           outcome: 'alreadySubmitting' in result ? 'alreadySubmitting' as const : 'unsubmittable' as const,
           gid: null,
           triggeredAt,
+          callId: exec.callId,
         }
       },
     }),

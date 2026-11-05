@@ -53,8 +53,8 @@ export function createDownloadCoordinator(deps: {
     if (!candidate.submittable) return { unsubmittable: true }
     const key = candidate.dedupeKey
     if (store.has(key)) {
-      // The typed store exposes lookup through list(); has() guarantees a record.
-      const record = store.list().find(record => record.key === key) as SubmitRecord
+      const record = store.list().find(record => record.key === key)
+      if (record === undefined) throw new Error(`SubmitStore has key "${key}" but no matching record`)
       return { alreadySubmitted: record.gid }
     }
     if (inFlight.has(key)) return { alreadySubmitting: true }

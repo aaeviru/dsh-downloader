@@ -61,10 +61,12 @@ describe('download tools', () => {
     vi.mocked(service.add).mockResolvedValue(result)
     const add = tool('download_add')
     const args = { candidateId: 'candidate' }
-    const expected = { candidateId: 'candidate', outcome, gid, triggeredAt }
+    const expected = { candidateId: 'candidate', outcome, gid, triggeredAt, callId: 'call' }
     const output = await add.execute(args, exec)
     expect(output).toEqual(expected)
     expect(JSON.parse(JSON.stringify(output))).toEqual(output)
+    expect(JSON.stringify(output)).not.toContain('token')
+    expect(JSON.stringify(output)).not.toContain('secret')
     expect(service.add).toHaveBeenCalledWith('candidate')
     expect(add.output.render(args, expected)).toEqual([{ type: 'text', text: `Download submission: ${outcome}.` }])
   })

@@ -54,6 +54,13 @@ describe('createDownloadCoordinator', () => {
     expect(add).toHaveBeenCalledTimes(1)
   })
 
+  it('rejects with the key when the store claims a missing record exists', async () => {
+    const { source, downloader, store } = setup()
+    const inconsistentStore: SubmitStore = { ...store, has: () => true, list: () => [] }
+    const coordinator = createDownloadCoordinator({ source, downloader, store: inconsistentStore })
+    await expect(coordinator.submit(candidate('missing-key'))).rejects.toThrow('missing-key')
+  })
+
   it('returns alreadySubmitting before the in-flight add completes', async () => {
     const { coordinator, add, store } = setup()
     const gate = Promise.withResolvers<{ gid: string }>()

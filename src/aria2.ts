@@ -76,7 +76,8 @@ const fetchTransport: Aria2Transport = request => fetch(request.url, {
 
 /** Create a client. `transport` defaults to a thin wrapper over global fetch. */
 export function createAria2Client(config: Aria2Config, transport: Aria2Transport = fetchTransport): Aria2Client {
-  const { endpoint, token, timeoutMs } = config
+  const { endpoint, timeoutMs } = config
+  const token = config.token === '' ? null : config.token
   let id = 0
   const sanitize = (value: string): string => {
     while (token && value.includes(token)) value = value.split(token).join('')
@@ -120,7 +121,7 @@ export function createAria2Client(config: Aria2Config, transport: Aria2Transport
       if (controller.signal.aborted) throw new Aria2TimeoutError(sanitize(method))
       if (error instanceof Aria2AuthError) throw error
       // Redact before truncation so a token crossing the preview boundary is removed.
-      throw new Aria2ProtocolError(sanitize(method), status, sanitize(body).slice(0, 200))
+      throw new Aria2ProtocolError(sanitize(method), status, Buffer.from(sanitize(body), 'utf8').subarray(0, 200).toString('utf8'))
     } finally {
       clearTimeout(timer)
     }
