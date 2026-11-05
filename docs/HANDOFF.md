@@ -68,7 +68,12 @@ git -c credential.helper='!gh auth git-credential' push
   - `src/aria2.ts`：`createAria2Client(config, transport?)`、`getVersion` / `addUri` / `tellStatus`、四类错误（`Aria2AuthError` / `Aria2TimeoutError` / `Aria2ProtocolError` / 基类 `Aria2Error`）
   - `tests/aria2.spec.ts`：14 条用例，全部打 `127.0.0.1:0` 的 stub，不访问真实 NAS
   - `[CONTRACT v2]` 挂在 #3；`[REVIEW]` 已发（[#3 comment 6657364070](https://github.com/aaeviru/dsh-downloader/issues/3#issuecomment-6657364070)），B1–B9 全部 VERIFIED。**等待人类 `[DECISION]`。**
-- 六个任务 issue：`#2` Phase 1a（已实现 + 已 review）、`#3` 1b（已实现 + 已 review）、`#4` 1c、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
+- **Phase 1c 已实现并提交**：`9b30a16 feat: coordinate submissions with recorded keys and in-flight protection`。
+  - `src/coordinator.ts`：`createDownloadCoordinator({ source, downloader, store })`、`refresh()` / `submit()`、单飞保护（每实例 in-flight map）、四类返回值
+  - `tests/coordinator.spec.ts`：12 条用例，纯内存假接缝，不起 socket
+  - `[CONTRACT v3]` 挂在 #4（含一处规格矛盾的裁决：`refresh()` 自动提交）；`[REVIEW]` 已发（[#4 comment 6657462793](https://github.com/aaeviru/dsh-downloader/issues/4#issuecomment-6657462793)），B1–B8 全部 VERIFIED。**等待人类 `[DECISION]`。**
+  - **人工端到端验收未做**：接真实 NAS 提交一条的任务书要求「必须得到用户明确同意」，尚未授权。
+- 六个任务 issue：`#2` Phase 1a（已实现 + 已 review）、`#3` 1b（已实现 + 已 review）、`#4` 1c（已实现 + 已 review）、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
@@ -110,9 +115,9 @@ cd /home/aaevi/projects/dsh-downloader
 
 ## 7. 下一步
 
-1. 人类在 #2 / #3 对各 `[REVIEW]` 回 `[DECISION]`。
-2. 派 Codex 做 Phase 1c（#4）：真机验收需人类同意，先做可离线验证的部分。
-3. 之后 Phase 2（#5）→ Phase 3（#6）→ Phase 4（#7）。
+1. 人类在 #2 / #3 / #4 对各 `[REVIEW]` 回 `[DECISION]`。
+2. 真实链路验收（1c）：需要人类明确同意后，用 `10.0.0.7:8082` + 示例 RSS 手动提交一条，**默认不自动提交**。
+3. Phase 2（#5）→ Phase 3（#6）→ Phase 4（#7）。
 
 ## 8. 明确未验证的 / 已知缺口
 
