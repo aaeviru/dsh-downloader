@@ -81,7 +81,13 @@ git -c credential.helper='!gh auth git-credential' push
   - `tests/service.spec.ts` + `tests/tools.spec.ts`：17 条用例，全内存假接缝
   - `[CONTRACT v4]` 挂在 #5；`[REVIEW]` 已发（[#5 comment 6657791377](https://github.com/aaeviru/dsh-downloader/issues/5#issuecomment-6657791377)），B1–B9 全部 VERIFIED。**等待人类 `[DECISION]`。**
   - 两处偏差：① Remote 命名空间与 UI 一起推迟到 Phase 4（Typert 生成的客户端类型需要 harness 侧登记）；② `download_add` 只记录 `candidateId` + `triggeredAt`，未写触发者身份（会话日志可追溯）。
-- 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2（前三者与 Phase 2 均已实现 + 已 review）、`#6` Phase 3、`#7` Phase 4。
+- **Phase 3 已实现并提交**：`e9bd08f feat: persist submissions and add polling and rule selection`。
+  - `src/store.ts`：`createPersistentSubmitStore(backend)`（注入式 load/save 端口，串行快照保存，`flush()` 上报失败）
+  - `src/poller.ts`：`createPoller({ intervalMs, run, timers, onError })`（单一 `setTimeout`、重入跳过、`generation` 失效陈旧回调）
+  - `src/rules.ts`：`selectForSubmission(candidates, { keywords, maxPerRound, autoSubmit })`（纯函数）
+  - `[CONTRACT v5]` 挂在 #6；`[REVIEW]` 已发（[#6 comment 6657887013](https://github.com/aaeviru/dsh-downloader/issues/6#issuecomment-6657887013)），B1–B7 全部 VERIFIED。**等待人类 `[DECISION]`。**
+  - 偏差：`ctx.storageDomain` 未接（需 `defineDomain` + `storage.open`，Desktop 侧无法离线验证），改用注入式后端；配置面随 Phase 4 的插件接线一起做。
+- 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4 待做。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
@@ -123,9 +129,9 @@ cd /home/aaevi/projects/dsh-downloader
 
 ## 7. 下一步
 
-1. 人类在 #2 / #3 / #4 / #5 对各 `[REVIEW]` 回 `[DECISION]`。
+1. 人类在 #2 / #3 / #4 / #5 / #6 对各 `[REVIEW]` 回 `[DECISION]`。
 2. 真实链路验收（1c）：需要人类明确同意后，用 `10.0.0.7:8082` + 示例 RSS 手动提交一条，**默认不自动提交**。
-3. Phase 3（#6，持久化 / 轮询 / 规则）→ Phase 4（#7，UI + Remote 接线 + `src/index.ts` 插件注册）。
+3. Phase 4（#7）：UI + Remote 接线 + `src/index.ts` 插件注册 + storageDomain/JSON store 落地 + `static Config`。
 
 ## 8. 明确未验证的 / 已知缺口
 
