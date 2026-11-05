@@ -87,7 +87,13 @@ git -c credential.helper='!gh auth git-credential' push
   - `src/rules.ts`：`selectForSubmission(candidates, { keywords, maxPerRound, autoSubmit })`（纯函数）
   - `[CONTRACT v5]` 挂在 #6；`[REVIEW]` 已发（[#6 comment 6657887013](https://github.com/aaeviru/dsh-downloader/issues/6#issuecomment-6657887013)），B1–B7 全部 VERIFIED。**等待人类 `[DECISION]`。**
   - 偏差：`ctx.storageDomain` 未接（需 `defineDomain` + `storage.open`，Desktop 侧无法离线验证），改用注入式后端；配置面随 Phase 4 的插件接线一起做。
-- 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4 待做。
+- **Phase 4 第 1 步（Host 接线）已完成并提交**：`9ae98ae feat: mount the plugin on a host context with a JSON submission store`。
+  - `src/store-json.ts`（原子写、`0600`）、`src/aria2.ts` 新增 `followedBy`、`src/index.ts` 可挂载（`Config` / `inject` / per-operation token / effect 注册）、`resolveStorePath`
+  - **bundle 0.51 kB → 14.65 kB**：插件真正进入产物
+  - 106 条测试、11 个源文件 100% 覆盖
+  - 进度说明：[#7 comment 6658290935](https://github.com/aaeviru/dsh-downloader/issues/7#issuecomment-6658290935)
+- **Phase 4 第 2–4 步未做**：Remote 命名空间（需 harness 生成器认识本包）、客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
+- 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4（进行中）。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
@@ -136,6 +142,9 @@ cd /home/aaevi/projects/dsh-downloader
 3. Phase 4（#7）：UI + Remote 接线 + `src/index.ts` 插件注册 + storageDomain/JSON store 落地 + `static Config`。
 
 ## 8. 明确未验证的 / 已知缺口
+
+- **`tests/` 不在类型检查范围内**：`tsconfig.json` 的 `include` 只有 `src`，测试里的类型错误（如 `sourceUrl: null`、残缺的 `ctx as Context` 桩）不会被 `tsc -b` 发现。要修得连测试夹具一起重构。
+- **`ctx.baseDir` 不存在**：Cordis 只有 `baseUrl`；插件数据目录一律走 `DSH_HOME`（默认 `~/.dsh`），已由 `resolveStorePath` 统一。
 
 - **bundle 产物仍是 0.51 kB**：`src/candidate.ts` 与 `src/rss.ts` 未从 `src/index.ts` 导出，Phase 1a 是源码级交付；插件接线在后续阶段。别把「bundle 通过」当成新代码已进产物。
 - **`status(gid)` 只反映「包装任务」**：提交 `.torrent` URL 时 aria2 的 `follow-torrent` 会派生新 gid（`followedBy`），真下载在派生 gid 上。Phase 4 需要跟随 `followedBy`，否则界面会显示「已完成」而实际仍在下载。
