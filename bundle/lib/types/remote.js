@@ -39,6 +39,7 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createAria2Client } from "./aria2.js";
 import { createDownloadService } from "./service.js";
+import { createRssSource } from "./source.js";
 import { createPersistentSubmitStore } from "./store.js";
 import { createJsonFileSubmitStoreBackend } from "./store-json.js";
 /**
@@ -80,6 +81,7 @@ let DownloadRemote = (() => {
             tokenRef: z.string().default('ARIA2_TOKEN'),
             timeoutMs: z.number().min(1).default(15000),
             storePath: z.string().default('downloader/submissions.json'),
+            feedUrl: z.string().default('https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0'),
         });
         /** The service the tools and the Remote methods share. */
         service = __runInitializers(this, _instanceExtraInitializers);
@@ -94,7 +96,7 @@ let DownloadRemote = (() => {
                 return createDownloadService({
                     store,
                     // RSS wiring arrives in the next step; discovery is explicitly empty for now.
-                    source: { listCandidates: () => Promise.resolve([]) },
+                    source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
                     downloader: {
                         async add(candidate) {
                             const uri = candidate.torrentUrl ?? candidate.magnetUri;

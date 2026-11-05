@@ -15,7 +15,7 @@ afterEach(() => { vi.restoreAllMocks() })
 it('supplies mount defaults and validates timeout', () => {
   expect(name).toBe('dsh-downloader')
   expect(inject).toEqual(['tools', 'credentials', 'typert'])
-  expect(Config({})).toEqual({ endpoint: 'http://10.0.0.7:8082/jsonrpc', tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json' })
+  expect(Config({})).toEqual({ endpoint: 'http://10.0.0.7:8082/jsonrpc', tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json', feedUrl: 'https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0' })
   expect(() => Config({ timeoutMs: 0 })).toThrow()
 })
 
@@ -49,7 +49,7 @@ it.each([false, true])('wires persistent store, credentials, tools and disposal 
     const deps = vi.mocked(createDownloadService).mock.calls.at(-1)![0]
     const [service, options] = vi.mocked(createDownloadTools).mock.calls.at(-1)!
     expect(options.clock()).toBeInstanceOf(Date)
-    expect(await service.listCandidates()).toEqual([])
+    expect(deps.source).toBeDefined()
     expect(register.mock.calls).toHaveLength(3)
     const requests: { method: string; params: unknown[] }[] = []
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {

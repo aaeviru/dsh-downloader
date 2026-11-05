@@ -6,6 +6,7 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createAria2Client } from './aria2.ts'
 import { createDownloadService } from './service.ts'
+import { createRssSource } from './source.ts'
 import type { DownloadService } from './service.ts'
 import type { Candidate, RefreshResult, SubmitResult } from './types.ts'
 import { createPersistentSubmitStore } from './store.ts'
@@ -26,6 +27,7 @@ export interface Config {
   tokenRef: string
   timeoutMs: number
   storePath: string
+  feedUrl: string
 }
 
 /** Own the download service and its browser namespace. */
@@ -36,6 +38,7 @@ export class DownloadRemote extends TypertRemoteService {
     tokenRef: z.string().default('ARIA2_TOKEN'),
     timeoutMs: z.number().min(1).default(15000),
     storePath: z.string().default('downloader/submissions.json'),
+    feedUrl: z.string().default('https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0'),
   })
 
   /** The service the tools and the Remote methods share. */
@@ -54,7 +57,7 @@ export class DownloadRemote extends TypertRemoteService {
       return createDownloadService({
         store,
         // RSS wiring arrives in the next step; discovery is explicitly empty for now.
-        source: { listCandidates: () => Promise.resolve([]) },
+        source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
         downloader: {
           async add(candidate) {
             const uri = candidate.torrentUrl ?? candidate.magnetUri

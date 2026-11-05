@@ -3,6 +3,8 @@ import { Remote, TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
 import z from "@deepseek-ai/schemastery";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { XMLParser } from "fast-xml-parser";
+import { SyntaxValidator } from "fast-xml-validator";
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { defineTool } from "@deepseek-ai/dsh-tools";
@@ -121,6 +123,16 @@ function createAria2Client(config, transport = fetchTransport) {
 }
 //#endregion
 //#region lib/types/candidate.js
+function normalizeInfoHash(raw) {
+	if (typeof raw !== "string") return null;
+	if (/^[a-f0-9]{40}$/i.test(raw)) return raw.toLowerCase();
+	if (!/^[a-z2-7]{32}$/i.test(raw)) return null;
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+	const bits = raw.toUpperCase().split("").map((char) => alphabet.indexOf(char).toString(2).padStart(5, "0")).join("");
+	let hex = "";
+	for (let offset = 0; offset < bits.length; offset += 8) hex += Number.parseInt(bits.slice(offset, offset + 8), 2).toString(16).padStart(2, "0");
+	return hex;
+}
 function dedupeCandidates(list) {
 	const seen = /* @__PURE__ */ new Set();
 	return list.filter((candidate) => {
@@ -216,6 +228,129 @@ function createDownloadService(deps) {
 			return result;
 		}
 	};
+}
+//#endregion
+//#region lib/types/rss.js
+var RssParseError = class extends Error {
+	code;
+	constructor(code, options) {
+		super(code, options);
+		this.name = "RssParseError";
+		this.code = code;
+	}
+};
+function field(value, key) {
+	if (typeof value === "object" && value !== null && !Array.isArray(value)) return value[key];
+}
+function text(value) {
+	const content = typeof value === "string" ? value : field(value, "#text");
+	return typeof content === "string" && content !== "" ? content : null;
+}
+function list(value) {
+	return Array.isArray(value) ? value : [value];
+}
+function size(value) {
+	const match = /^(\d+(?:\.\d+)?)\s*(b|kib|mib|gib|tib)$/i.exec(value ?? "");
+	if (!match) return null;
+	const amount = Number(match[1]);
+	const unit = String(match[2]).toLowerCase();
+	const bytes = Math.round(amount * 1024 ** [
+		"b",
+		"kib",
+		"mib",
+		"gib",
+		"tib"
+	].indexOf(unit));
+	return Number.isFinite(bytes) ? bytes : null;
+}
+function date(value) {
+	const timestamp = Date.parse(value ?? "");
+	return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
+}
+function candidate(item, sourceId) {
+	const links = list(field(item, "link"));
+	const alternate = links.find((link) => field(link, "@_rel") === "alternate");
+	const link = text(field(item, "link")) ?? text(field(alternate, "@_href"));
+	const sourceUrl = link ?? text(field(item, "guid")) ?? text(field(item, "id"));
+	if (sourceUrl === null) return null;
+	const magnetUri = link?.startsWith("magnet:?") ? link : null;
+	const torrentUrl = [
+		link,
+		...list(field(item, "enclosure")).map((entry) => text(field(entry, "@_url"))),
+		...links.filter((entry) => field(entry, "@_rel") === "enclosure").map((entry) => text(field(entry, "@_href")))
+	].find((url) => url?.endsWith(".torrent")) ?? null;
+	const infoHash = new URLSearchParams((magnetUri ?? "").slice(8)).getAll("xt").filter((value) => /^urn:btih:/i.test(value)).map((value) => normalizeInfoHash(value.slice(9))).find((value) => value !== null) ?? null ?? normalizeInfoHash(text(field(item, "nyaa:infoHash"))) ?? normalizeInfoHash(text(field(item, "torrent:infoHash")));
+	const dedupeKey = infoHash === null ? `url:${sourceUrl}` : `ih:${infoHash}`;
+	return {
+		id: `${sourceId}:${dedupeKey}`,
+		sourceId,
+		title: text(field(item, "title")) ?? "",
+		publishedAt: date(text(field(item, "pubDate")) ?? text(field(item, "published")) ?? text(field(item, "updated"))),
+		infoHash,
+		magnetUri,
+		torrentUrl,
+		sizeBytes: size(text(field(item, "nyaa:size"))),
+		sourceUrl,
+		submittable: magnetUri !== null || torrentUrl !== null,
+		dedupeKey
+	};
+}
+function parseRssFeed(xml, options) {
+	try {
+		SyntaxValidator.validate(xml);
+	} catch (cause) {
+		throw new RssParseError("not-xml", { cause });
+	}
+	const root = new XMLParser({
+		ignoreAttributes: false,
+		parseTagValue: false
+	}).parse(xml);
+	const atom = field(root, "feed");
+	const rdf = field(root, "rdf:RDF");
+	const channel = field(field(root, "rss") ?? rdf, "channel");
+	if (atom === void 0 && channel === void 0) throw new RssParseError("no-channel");
+	const container = atom ?? rdf ?? channel;
+	const items = [...list(field(container, "item")), ...list(field(container, "entry"))];
+	const candidates = [];
+	for (const item of items) {
+		const parsed = candidate(item, options.sourceId);
+		if (parsed !== null) candidates.push(parsed);
+	}
+	return dedupeCandidates(candidates);
+}
+//#endregion
+//#region lib/types/source.js
+/** A feed that could not be retrieved. */
+var FeedFetchError = class extends Error {
+	status;
+	constructor(status) {
+		super(`Feed request failed with status ${status}`);
+		this.name = "FeedFetchError";
+		this.status = status;
+	}
+};
+const defaultTransport = (url, signal) => fetch(url, { signal });
+/**
+* Build a candidate source over one RSS feed.
+* @param options - feed address, request timeout, and an optional transport override.
+* @returns a source that fetches the feed and returns normalized, deduplicated candidates.
+*/
+function createRssSource(options) {
+	const transport = options.transport ?? defaultTransport;
+	const sourceId = new URL(options.feedUrl).host;
+	return { async listCandidates() {
+		const controller = new AbortController();
+		const timer = setTimeout(() => {
+			controller.abort();
+		}, options.timeoutMs);
+		try {
+			const response = await transport(options.feedUrl, controller.signal);
+			if (!response.ok) throw new FeedFetchError(response.status);
+			return dedupeCandidates(parseRssFeed(await response.text(), { sourceId }));
+		} finally {
+			clearTimeout(timer);
+		}
+	} };
 }
 //#endregion
 //#region lib/types/store.js
@@ -427,7 +562,8 @@ let DownloadRemote = (() => {
 			endpoint: z.string().default("http://10.0.0.7:8082/jsonrpc"),
 			tokenRef: z.string().default("ARIA2_TOKEN"),
 			timeoutMs: z.number().min(1).default(15e3),
-			storePath: z.string().default("downloader/submissions.json")
+			storePath: z.string().default("downloader/submissions.json"),
+			feedUrl: z.string().default("https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0")
 		});
 		/** The service the tools and the Remote methods share. */
 		service = __runInitializers(this, _instanceExtraInitializers);
@@ -442,7 +578,10 @@ let DownloadRemote = (() => {
 				});
 				return createDownloadService({
 					store,
-					source: { listCandidates: () => Promise.resolve([]) },
+					source: createRssSource({
+						feedUrl: config.feedUrl,
+						timeoutMs: config.timeoutMs
+					}),
 					downloader: {
 						async add(candidate) {
 							const uri = candidate.torrentUrl ?? candidate.magnetUri;

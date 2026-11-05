@@ -15,6 +15,7 @@ export interface Config {
     tokenRef: string;
     timeoutMs: number;
     storePath: string;
+    feedUrl: string;
 }
 /** Own the download service and its browser namespace. */
 export declare class DownloadRemote extends TypertRemoteService {

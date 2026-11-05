@@ -15,8 +15,9 @@ export default {
     coverage: {
       provider: 'v8' as const,
       include: ['src/**'],
-      // The generated dsh-downloader/remote artifact is absent; the entry cannot be imported in tests.
-      exclude: ['src/client/index.ts'],
+      // Client code renders in jsdom through component tests; it is not part of the node coverage gate.
+      // types.ts is a type-only re-export and emits no runtime code.
+      exclude: ['src/client/**', 'src/types.ts'],
       thresholds: { perFile: true, statements: 100, branches: 100, functions: 100, lines: 100 },
     },
   },

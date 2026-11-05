@@ -164,17 +164,17 @@ window.__ModuleLoader__.load({
 		};
 		//#endregion
 		//#region lib/typert.remote-client.js
-		let dsh_downloader_download_add_parameter_0$schema$value;
-		const dsh_downloader_download_add_parameter_0$schema = () => dsh_downloader_download_add_parameter_0$schema$value ??= zod.z.string();
-		let dsh_downloader_download_add_result$schema$value;
-		const dsh_downloader_download_add_result$schema = () => dsh_downloader_download_add_result$schema$value ??= zod.z.union([
+		let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_add_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_add_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_result$schema$value ??= zod.z.union([
 			zod.z.object({ "gid": zod.z.string().readonly() }),
 			zod.z.object({ "alreadySubmitted": zod.z.string().readonly() }),
 			zod.z.object({ "alreadySubmitting": zod.z.literal(true).readonly() }),
 			zod.z.object({ "unsubmittable": zod.z.literal(true).readonly() })
 		]);
-		let dsh_downloader_download_list_result$schema$value;
-		const dsh_downloader_download_list_result$schema = () => dsh_downloader_download_list_result$schema$value ??= zod.z.array(zod.z.object({
+		let _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_list_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
 			"sourceId": zod.z.string().readonly(),
 			"title": zod.z.string().readonly(),
@@ -187,17 +187,17 @@ window.__ModuleLoader__.load({
 			"submittable": zod.z.boolean().readonly(),
 			"dedupeKey": zod.z.string().readonly()
 		}));
-		let dsh_downloader_download_refresh_result$schema$value;
-		const dsh_downloader_download_refresh_result$schema = () => dsh_downloader_download_refresh_result$schema$value ??= zod.z.object({
+		let _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value ??= zod.z.object({
 			"discovered": zod.z.number().readonly(),
 			"added": zod.z.number().readonly(),
 			"skipped": zod.z.number().readonly(),
 			"unsubmittable": zod.z.number().readonly()
 		});
-		let dsh_downloader_download_search_parameter_0$schema$value;
-		const dsh_downloader_download_search_parameter_0$schema = () => dsh_downloader_download_search_parameter_0$schema$value ??= zod.z.string();
-		let dsh_downloader_download_search_result$schema$value;
-		const dsh_downloader_download_search_result$schema = () => dsh_downloader_download_search_result$schema$value ??= zod.z.array(zod.z.object({
+		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_search_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
 			"sourceId": zod.z.string().readonly(),
 			"title": zod.z.string().readonly(),
@@ -210,18 +210,18 @@ window.__ModuleLoader__.load({
 			"submittable": zod.z.boolean().readonly(),
 			"dedupeKey": zod.z.string().readonly()
 		}));
-		let dsh_downloader_download_status_parameter_0$schema$value;
-		const dsh_downloader_download_status_parameter_0$schema = () => dsh_downloader_download_status_parameter_0$schema$value ??= zod.z.string();
-		let dsh_downloader_download_status_result$schema$value;
-		const dsh_downloader_download_status_result$schema = () => dsh_downloader_download_status_result$schema$value ??= zod.z.object({ "state": zod.z.string() });
-		let dsh_downloader_download_add_parameter_0_strict$schema$value;
-		const dsh_downloader_download_add_parameter_0_strict$schema = () => dsh_downloader_download_add_parameter_0_strict$schema$value ??= zod.z.string();
-		let dsh_downloader_download_search_parameter_0_strict$schema$value;
-		const dsh_downloader_download_search_parameter_0_strict$schema = () => dsh_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
-		let dsh_downloader_download_status_parameter_0_strict$schema$value;
-		const dsh_downloader_download_status_parameter_0_strict$schema = () => dsh_downloader_download_status_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_status_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value ??= zod.z.object({ "state": zod.z.string() });
+		let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= zod.z.string();
 		const TYPERT_REMOTE = createTypertRemoteInfo({
-			package: "dsh-downloader",
+			package: "@deepseek-ai/dsh-experimental-downloader",
 			methods: {
 				"download/add": {
 					service: "download",
@@ -231,21 +231,21 @@ window.__ModuleLoader__.load({
 						source: "json",
 						codec: {
 							mode: "strict",
-							typeSymbol: "dsh-downloader#download/add:candidateId",
-							create: dsh_downloader_download_add_parameter_0$schema,
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/add:candidateId",
+							create: _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0$schema,
 							jsonSchema: { "type": "string" }
 						},
 						strictCodec: {
 							mode: "strict",
-							typeSymbol: "dsh-downloader#download/add:candidateId",
-							create: dsh_downloader_download_add_parameter_0_strict$schema,
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/add:candidateId",
+							create: _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema,
 							jsonSchema: { "type": "string" }
 						}
 					}],
 					result: {
 						mode: "strict",
-						typeSymbol: "dsh-downloader/types#SubmitResult",
-						create: dsh_downloader_download_add_result$schema,
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#SubmitResult",
+						create: _deepseek_ai_dsh_experimental_downloader_download_add_result$schema,
 						jsonSchemaError: "typert tool schema: selected union branches overlap or have no required discriminator"
 					},
 					sourceLocation: {
@@ -260,8 +260,8 @@ window.__ModuleLoader__.load({
 					parameters: [],
 					result: {
 						mode: "strict",
-						typeSymbol: "dsh-downloader#download/list:result",
-						create: dsh_downloader_download_list_result$schema,
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:result",
+						create: _deepseek_ai_dsh_experimental_downloader_download_list_result$schema,
 						jsonSchema: {
 							"type": "array",
 							"items": {
@@ -323,8 +323,8 @@ window.__ModuleLoader__.load({
 					parameters: [],
 					result: {
 						mode: "strict",
-						typeSymbol: "dsh-downloader/types#RefreshResult",
-						create: dsh_downloader_download_refresh_result$schema,
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#RefreshResult",
+						create: _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema,
 						jsonSchema: {
 							"type": "object",
 							"properties": {
@@ -356,21 +356,21 @@ window.__ModuleLoader__.load({
 						source: "json",
 						codec: {
 							mode: "strict",
-							typeSymbol: "dsh-downloader#download/search:keyword",
-							create: dsh_downloader_download_search_parameter_0$schema,
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema,
 							jsonSchema: { "type": "string" }
 						},
 						strictCodec: {
 							mode: "strict",
-							typeSymbol: "dsh-downloader#download/search:keyword",
-							create: dsh_downloader_download_search_parameter_0_strict$schema,
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema,
 							jsonSchema: { "type": "string" }
 						}
 					}],
 					result: {
 						mode: "strict",
-						typeSymbol: "dsh-downloader#download/search:result",
-						create: dsh_downloader_download_search_result$schema,
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:result",
+						create: _deepseek_ai_dsh_experimental_downloader_download_search_result$schema,
 						jsonSchema: {
 							"type": "array",
 							"items": {
@@ -434,21 +434,21 @@ window.__ModuleLoader__.load({
 						source: "json",
 						codec: {
 							mode: "strict",
-							typeSymbol: "dsh-downloader#download/status:gid",
-							create: dsh_downloader_download_status_parameter_0$schema,
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/status:gid",
+							create: _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema,
 							jsonSchema: { "type": "string" }
 						},
 						strictCodec: {
 							mode: "strict",
-							typeSymbol: "dsh-downloader#download/status:gid",
-							create: dsh_downloader_download_status_parameter_0_strict$schema,
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/status:gid",
+							create: _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema,
 							jsonSchema: { "type": "string" }
 						}
 					}],
 					result: {
 						mode: "strict",
-						typeSymbol: "dsh-downloader#download/status:result",
-						create: dsh_downloader_download_status_result$schema,
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/status:result",
+						create: _deepseek_ai_dsh_experimental_downloader_download_status_result$schema,
 						jsonSchema: {
 							"type": "object",
 							"properties": { "state": { "type": "string" } },
