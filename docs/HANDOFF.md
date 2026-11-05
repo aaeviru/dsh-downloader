@@ -64,7 +64,11 @@ git -c credential.helper='!gh auth git-credential' push
   - `tests/`：3 个 spec、23 条用例、9 个 fixture
   - `docs/tasks/phase-1a-fixtures.md`：fixture 清单、补充用例 B11–B16、把 10 个含糊点定死
 - `[REVIEW]` 已发（[#2 comment 6657197425](https://github.com/aaeviru/dsh-downloader/issues/2#issuecomment-6657197425)），B1–B16 全部 VERIFIED。**等待人类 `[DECISION]`。**
-- 六个任务 issue：`#2` Phase 1a（已实现）、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
+- **Phase 1b 已实现并提交**：`388103c feat: add an aria2 JSON-RPC client with an injectable transport`。
+  - `src/aria2.ts`：`createAria2Client(config, transport?)`、`getVersion` / `addUri` / `tellStatus`、四类错误（`Aria2AuthError` / `Aria2TimeoutError` / `Aria2ProtocolError` / 基类 `Aria2Error`）
+  - `tests/aria2.spec.ts`：14 条用例，全部打 `127.0.0.1:0` 的 stub，不访问真实 NAS
+  - `[CONTRACT v2]` 挂在 #3；`[REVIEW]` 已发（[#3 comment 6657364070](https://github.com/aaeviru/dsh-downloader/issues/3#issuecomment-6657364070)），B1–B9 全部 VERIFIED。**等待人类 `[DECISION]`。**
+- 六个任务 issue：`#2` Phase 1a（已实现 + 已 review）、`#3` 1b（已实现 + 已 review）、`#4` 1c、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
@@ -102,11 +106,13 @@ cd /home/aaevi/projects/dsh-downloader
 
 已知限制：**Codex worker 在其沙箱内跑不了上面第一条**（harness 检出只读，Vite 写 `node_modules/.vite-temp` 报 EROFS）。它用仓库内等价命令自检并如实标注，权威结果由验收方重跑 —— 这是既定流程，不是缺陷。
 
+**Codex 的沙箱还禁止本地监听**：任何 `server.listen(127.0.0.1)` 都会 `EPERM`。所以凡是用 `node:http` 起 stub 的测试（如 `tests/aria2.spec.ts`），执行方一条都跑不了，覆盖率也无法自测；这类测试只能由验收方跑。派活时别指望它自证。
+
 ## 7. 下一步
 
-1. 人类在 #2 对 `[REVIEW]` 回 `[DECISION]`。
-2. 派 Codex 做 Phase 1b（#3）：可先全 stub，不接真实 NAS。
-3. 之后 1c（#4，真机验收需人类同意）→ Phase 2（#5）→ Phase 3（#6）→ Phase 4（#7）。
+1. 人类在 #2 / #3 对各 `[REVIEW]` 回 `[DECISION]`。
+2. 派 Codex 做 Phase 1c（#4）：真机验收需人类同意，先做可离线验证的部分。
+3. 之后 Phase 2（#5）→ Phase 3（#6）→ Phase 4（#7）。
 
 ## 8. 明确未验证的 / 已知缺口
 
