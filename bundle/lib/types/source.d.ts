@@ -14,6 +14,8 @@ export declare class FeedFetchError extends Error {
 }
 export interface RssSourceOptions {
     readonly feedUrl: string;
+    /** Feed search term; omitted keeps the address as configured. */
+    readonly keyword?: string;
     readonly timeoutMs: number;
     readonly transport?: FeedTransport;
 }

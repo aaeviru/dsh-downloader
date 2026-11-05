@@ -18,12 +18,19 @@ const defaultTransport = (url, signal) => fetch(url, { signal });
 export function createRssSource(options) {
     const transport = options.transport ?? defaultTransport;
     const sourceId = new URL(options.feedUrl).host;
+    const requestUrl = () => {
+        if (options.keyword === undefined || options.keyword.trim() === '')
+            return options.feedUrl;
+        const url = new URL(options.feedUrl);
+        url.searchParams.set('q', options.keyword);
+        return url.toString();
+    };
     return {
         async listCandidates() {
             const controller = new AbortController();
             const timer = setTimeout(() => { controller.abort(); }, options.timeoutMs);
             try {
-                const response = await transport(options.feedUrl, controller.signal);
+                const response = await transport(requestUrl(), controller.signal);
                 if (!response.ok)
                     throw new FeedFetchError(response.status);
                 return dedupeCandidates(parseRssFeed(await response.text(), { sourceId }));

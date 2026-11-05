@@ -18,8 +18,9 @@ export function createDownloadService(deps) {
     }
     return {
         async search(keyword) {
-            const candidates = await discover();
-            return candidates.filter(candidate => candidate.title.toLowerCase().includes(keyword.toLowerCase()));
+            const candidates = await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates();
+            cache = dedupeCandidates(candidates);
+            return cache;
         },
         async listCandidates() {
             return cache ?? discover();

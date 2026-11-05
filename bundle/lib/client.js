@@ -573,6 +573,9 @@ window.__ModuleLoader__.load({
 				key: "published",
 				descending: true
 			});
+			const [keyword, setKeyword] = (0, react.useState)("");
+			const [page, setPage] = (0, react.useState)(1);
+			const pageSize = 20;
 			const load = (0, react.useCallback)(async (refresh) => {
 				setState({ kind: "loading" });
 				try {
@@ -594,6 +597,22 @@ window.__ModuleLoader__.load({
 			(0, react.useEffect)(() => {
 				load(false);
 			}, [load]);
+			const runSearch = (0, react.useCallback)(async () => {
+				setState({ kind: "loading" });
+				setPage(1);
+				try {
+					const result = await download.search(keyword);
+					setState(result.ok ? {
+						kind: "ready",
+						candidates: result.value
+					} : { kind: "error" });
+				} catch {
+					setState({ kind: "error" });
+				}
+			}, [download, keyword]);
+			const ordered = state.kind === "ready" ? order(state.candidates, sort) : [];
+			const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
+			const visible = ordered.slice((page - 1) * pageSize, page * pageSize);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				style: {
 					padding: 24,
@@ -606,13 +625,46 @@ window.__ModuleLoader__.load({
 						style: { color: "var(--dsw-alias-label-secondary)" },
 						children: t("description")
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-						type: "button",
-						disabled: state.kind === "loading",
-						onClick: () => {
-							load(true);
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						style: {
+							display: "flex",
+							gap: 8,
+							alignItems: "center",
+							margin: "12px 0"
 						},
-						children: t("refresh")
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+								"aria-label": t("search"),
+								value: keyword,
+								placeholder: t("search"),
+								onChange: (event) => {
+									setKeyword(event.target.value);
+								},
+								onKeyDown: (event) => {
+									if (event.key === "Enter") runSearch();
+								},
+								style: {
+									padding: "6px 8px",
+									minWidth: 220
+								}
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								disabled: state.kind === "loading",
+								onClick: () => {
+									runSearch();
+								},
+								children: t("search")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								disabled: state.kind === "loading",
+								onClick: () => {
+									load(true);
+								},
+								children: t("refresh")
+							})
+						]
 					}),
 					state.kind === "loading" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						role: "status",
@@ -628,41 +680,78 @@ window.__ModuleLoader__.load({
 							children: t("retry")
 						})]
 					}),
-					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						role: "group",
-						"aria-label": "sort",
-						style: {
-							display: "flex",
-							gap: 8,
-							margin: "8px 0"
-						},
-						children: [
-							"published",
-							"seeders",
-							"leechers",
-							"downloads"
-						].map((key) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-							type: "button",
-							"aria-pressed": sort.key === key,
-							onClick: () => {
-								setSort((current) => ({
-									key,
-									descending: current.key === key ? !current.descending : true
-								}));
+					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							role: "group",
+							"aria-label": "sort",
+							style: {
+								display: "flex",
+								gap: 8,
+								margin: "8px 0"
 							},
-							children: [t(key), sort.key === key ? sort.descending ? " ↓" : " ↑" : ""]
-						}, key))
-					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-						style: {
-							listStyle: "none",
-							padding: 0
-						},
-						children: order(state.candidates, sort).map((candidate) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CandidateRow, {
-							candidate,
-							t,
-							download
-						}, candidate.id))
-					})] }))
+							children: [
+								"published",
+								"seeders",
+								"leechers",
+								"downloads"
+							].map((key) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+								type: "button",
+								"aria-pressed": sort.key === key,
+								onClick: () => {
+									setSort((current) => ({
+										key,
+										descending: current.key === key ? !current.descending : true
+									}));
+								},
+								children: [t(key), sort.key === key ? sort.descending ? " ↓" : " ↑" : ""]
+							}, key))
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
+							style: {
+								listStyle: "none",
+								padding: 0
+							},
+							children: visible.map((candidate) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CandidateRow, {
+								candidate,
+								t,
+								download
+							}, candidate.id))
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							style: {
+								display: "flex",
+								gap: 8,
+								alignItems: "center",
+								marginTop: 8
+							},
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: page <= 1,
+									onClick: () => {
+										setPage((value) => Math.max(1, value - 1));
+									},
+									children: "‹"
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									"aria-live": "polite",
+									children: [
+										page,
+										" / ",
+										pageCount
+									]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: page >= pageCount,
+									onClick: () => {
+										setPage((value) => Math.min(pageCount, value + 1));
+									},
+									children: "›"
+								})
+							]
+						})
+					] }))
 				]
 			});
 		}
@@ -695,6 +784,7 @@ window.__ModuleLoader__.load({
 			panel: "Downloader",
 			description: "Browse and submit download candidates.",
 			refresh: "Refresh",
+			search: "Search",
 			loading: "Loading…",
 			empty: "No download candidates yet.",
 			error: "Unable to load downloads.",
@@ -717,6 +807,7 @@ window.__ModuleLoader__.load({
 			panel: "下载器",
 			description: "浏览并提交下载候选项。",
 			refresh: "刷新",
+			search: "搜索",
 			loading: "加载中…",
 			empty: "暂无下载候选项。",
 			error: "无法加载下载列表。",

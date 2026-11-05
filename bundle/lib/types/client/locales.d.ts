@@ -5,6 +5,7 @@ export declare const en: {
     readonly panel: "Downloader";
     readonly description: "Browse and submit download candidates.";
     readonly refresh: "Refresh";
+    readonly search: "Search";
     readonly loading: "Loading…";
     readonly empty: "No download candidates yet.";
     readonly error: "Unable to load downloads.";

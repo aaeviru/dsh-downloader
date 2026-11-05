@@ -24,6 +24,8 @@ export interface DownloadService {
 /** Create the service over the three injected seams. */
 export function createDownloadService(deps: {
   readonly source: Source
+  /** Build a source scoped to one search keyword; defaults to the configured source. */
+  readonly makeSource?: (keyword: string) => Source
   readonly downloader: Downloader
   readonly store: SubmitStore
 }): DownloadService {
@@ -37,8 +39,9 @@ export function createDownloadService(deps: {
 
   return {
     async search(keyword) {
-      const candidates = await discover()
-      return candidates.filter(candidate => candidate.title.toLowerCase().includes(keyword.toLowerCase()))
+      const candidates = await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates()
+      cache = dedupeCandidates(candidates)
+      return cache
     },
     async listCandidates() {
       return cache ?? discover()

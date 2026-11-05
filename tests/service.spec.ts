@@ -21,23 +21,22 @@ function setup(entries: readonly Candidate[] = []) {
   const list = vi.fn<Source['listCandidates']>().mockResolvedValue(entries)
   const add = vi.fn<Downloader['add']>().mockResolvedValue({ gid: 'download' })
   const status = vi.fn<Downloader['status']>().mockResolvedValue({ state: 'active' })
-  const service = createDownloadService({ source: { listCandidates: list }, downloader: { add, status }, store })
-  return { list, add, status, store, service }
+  const deps = { source: { listCandidates: list }, downloader: { add, status }, store } as Parameters<typeof createDownloadService>[0] & { makeSource?: (keyword: string) => Source }
+  const service = createDownloadService(deps)
+  return { list, add, status, store, service, deps }
 }
 
 describe('DownloadService', () => {
-  it('B1/B2 searches case-insensitively, deduplicates and caches the unfiltered list without submitting', async () => {
+  it('B1/B2 searches through a keyword-scoped source and caches its result', async () => {
     const first = candidate('Alpha')
     const second = candidate('Beta')
-    const { service, list, add } = setup([first, { ...first, id: 'duplicate' }, second])
-    expect(await service.search('ALP')).toEqual([first])
-    expect(await service.listCandidates()).toEqual([first, second])
-    expect(await service.listCandidates()).toEqual([first, second])
-    expect(list).toHaveBeenCalledTimes(1)
-    list.mockResolvedValue([second])
-    expect(await service.search('alpha')).toEqual([])
+    const { service, deps, add } = setup([first])
+    const scoped = vi.fn(async () => [second])
+    deps.makeSource = () => ({ listCandidates: scoped })
+    expect(await service.search('beta')).toEqual([second])
+    expect(scoped).toHaveBeenCalledTimes(1)
     expect(await service.listCandidates()).toEqual([second])
-    expect(list).toHaveBeenCalledTimes(2)
+    expect(scoped).toHaveBeenCalledTimes(1)
     expect(add).not.toHaveBeenCalled()
   })
 

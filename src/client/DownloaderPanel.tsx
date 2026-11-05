@@ -73,6 +73,9 @@ function CandidateRow({ candidate, t, download }: { candidate: Candidate; t: Tra
 export function DownloaderPanel({ t, download }: { t: Translate; download: DownloadNamespace }) {
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({ key: 'published', descending: true })
+  const [keyword, setKeyword] = useState('')
+  const [page, setPage] = useState(1)
+  const pageSize = 20
   const load = useCallback(async (refresh: boolean) => {
     setState({ kind: 'loading' })
     try {
@@ -87,11 +90,35 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
     }
   }, [download])
   useEffect(() => { void load(false) }, [load])
+  const runSearch = useCallback(async () => {
+    setState({ kind: 'loading' })
+    setPage(1)
+    try {
+      const result = await download.search(keyword)
+      setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
+    } catch {
+      setState({ kind: 'error' })
+    }
+  }, [download, keyword])
+  const ordered = state.kind === 'ready' ? order(state.candidates, sort) : []
+  const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize))
+  const visible = ordered.slice((page - 1) * pageSize, page * pageSize)
   return (
     <section style={{ padding: 24, color: 'var(--dsw-alias-label-primary)', background: 'var(--dsw-alias-bg-base)' }}>
       <h1>{t('panel')}</h1>
       <p style={{ color: 'var(--dsw-alias-label-secondary)' }}>{t('description')}</p>
-      <button type="button" disabled={state.kind === 'loading'} onClick={() => { void load(true) }}>{t('refresh')}</button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '12px 0' }}>
+        <input
+          aria-label={t('search')}
+          value={keyword}
+          placeholder={t('search')}
+          onChange={event => { setKeyword(event.target.value) }}
+          onKeyDown={event => { if (event.key === 'Enter') void runSearch() }}
+          style={{ padding: '6px 8px', minWidth: 220 }}
+        />
+        <button type="button" disabled={state.kind === 'loading'} onClick={() => { void runSearch() }}>{t('search')}</button>
+        <button type="button" disabled={state.kind === 'loading'} onClick={() => { void load(true) }}>{t('refresh')}</button>
+      </div>
       {state.kind === 'loading' && <p role="status">{t('loading')}</p>}
       {state.kind === 'error' && <div role="alert"><p>{t('error')}</p><button type="button" onClick={() => { void load(false) }}>{t('retry')}</button></div>}
       {state.kind === 'ready' && (state.candidates.length === 0 ? <p>{t('empty')}</p> : (
@@ -107,8 +134,13 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
             ))}
           </div>
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {order(state.candidates, sort).map(candidate => <CandidateRow key={candidate.id} candidate={candidate} t={t} download={download} />)}
+            {visible.map(candidate => <CandidateRow key={candidate.id} candidate={candidate} t={t} download={download} />)}
           </ul>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+            <button type="button" disabled={page <= 1} onClick={() => { setPage(value => Math.max(1, value - 1)) }}>‹</button>
+            <span aria-live="polite">{page} / {pageCount}</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => { setPage(value => Math.min(pageCount, value + 1)) }}>›</button>
+          </div>
         </div>
       ))}
     </section>

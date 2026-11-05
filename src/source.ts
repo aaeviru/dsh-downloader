@@ -26,6 +26,8 @@ export class FeedFetchError extends Error {
 
 export interface RssSourceOptions {
   readonly feedUrl: string
+  /** Feed search term; omitted keeps the address as configured. */
+  readonly keyword?: string
   readonly timeoutMs: number
   readonly transport?: FeedTransport
 }
@@ -40,12 +42,18 @@ const defaultTransport: FeedTransport = (url, signal) => fetch(url, { signal })
 export function createRssSource(options: RssSourceOptions): Source {
   const transport = options.transport ?? defaultTransport
   const sourceId = new URL(options.feedUrl).host
+  const requestUrl = (): string => {
+    if (options.keyword === undefined || options.keyword.trim() === '') return options.feedUrl
+    const url = new URL(options.feedUrl)
+    url.searchParams.set('q', options.keyword)
+    return url.toString()
+  }
   return {
     async listCandidates(): Promise<readonly Candidate[]> {
       const controller = new AbortController()
       const timer = setTimeout(() => { controller.abort() }, options.timeoutMs)
       try {
-        const response = await transport(options.feedUrl, controller.signal)
+        const response = await transport(requestUrl(), controller.signal)
         if (!response.ok) throw new FeedFetchError(response.status)
         return dedupeCandidates(parseRssFeed(await response.text(), { sourceId }))
       } finally {

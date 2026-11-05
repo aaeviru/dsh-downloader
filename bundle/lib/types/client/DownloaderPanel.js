@@ -54,6 +54,9 @@ function CandidateRow({ candidate, t, download }) {
 export function DownloaderPanel({ t, download }) {
     const [state, setState] = useState({ kind: 'loading' });
     const [sort, setSort] = useState({ key: 'published', descending: true });
+    const [keyword, setKeyword] = useState('');
+    const [page, setPage] = useState(1);
+    const pageSize = 20;
     const load = useCallback(async (refresh) => {
         setState({ kind: 'loading' });
         try {
@@ -72,6 +75,21 @@ export function DownloaderPanel({ t, download }) {
         }
     }, [download]);
     useEffect(() => { void load(false); }, [load]);
-    return (_jsxs("section", { style: { padding: 24, color: 'var(--dsw-alias-label-primary)', background: 'var(--dsw-alias-bg-base)' }, children: [_jsx("h1", { children: t('panel') }), _jsx("p", { style: { color: 'var(--dsw-alias-label-secondary)' }, children: t('description') }), _jsx("button", { type: "button", disabled: state.kind === 'loading', onClick: () => { void load(true); }, children: t('refresh') }), state.kind === 'loading' && _jsx("p", { role: "status", children: t('loading') }), state.kind === 'error' && _jsxs("div", { role: "alert", children: [_jsx("p", { children: t('error') }), _jsx("button", { type: "button", onClick: () => { void load(false); }, children: t('retry') })] }), state.kind === 'ready' && (state.candidates.length === 0 ? _jsx("p", { children: t('empty') }) : (_jsxs("div", { children: [_jsx("div", { role: "group", "aria-label": "sort", style: { display: 'flex', gap: 8, margin: '8px 0' }, children: ['published', 'seeders', 'leechers', 'downloads'].map(key => (_jsxs("button", { type: "button", "aria-pressed": sort.key === key, onClick: () => { setSort(current => ({ key, descending: current.key === key ? !current.descending : true })); }, children: [t(key), sort.key === key ? (sort.descending ? ' ↓' : ' ↑') : ''] }, key))) }), _jsx("ul", { style: { listStyle: 'none', padding: 0 }, children: order(state.candidates, sort).map(candidate => _jsx(CandidateRow, { candidate: candidate, t: t, download: download }, candidate.id)) })] })))] }));
+    const runSearch = useCallback(async () => {
+        setState({ kind: 'loading' });
+        setPage(1);
+        try {
+            const result = await download.search(keyword);
+            setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' });
+        }
+        catch {
+            setState({ kind: 'error' });
+        }
+    }, [download, keyword]);
+    const ordered = state.kind === 'ready' ? order(state.candidates, sort) : [];
+    const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
+    const visible = ordered.slice((page - 1) * pageSize, page * pageSize);
+    return (_jsxs("section", { style: { padding: 24, color: 'var(--dsw-alias-label-primary)', background: 'var(--dsw-alias-bg-base)' }, children: [_jsx("h1", { children: t('panel') }), _jsx("p", { style: { color: 'var(--dsw-alias-label-secondary)' }, children: t('description') }), _jsxs("div", { style: { display: 'flex', gap: 8, alignItems: 'center', margin: '12px 0' }, children: [_jsx("input", { "aria-label": t('search'), value: keyword, placeholder: t('search'), onChange: event => { setKeyword(event.target.value); }, onKeyDown: event => { if (event.key === 'Enter')
+                            void runSearch(); }, style: { padding: '6px 8px', minWidth: 220 } }), _jsx("button", { type: "button", disabled: state.kind === 'loading', onClick: () => { void runSearch(); }, children: t('search') }), _jsx("button", { type: "button", disabled: state.kind === 'loading', onClick: () => { void load(true); }, children: t('refresh') })] }), state.kind === 'loading' && _jsx("p", { role: "status", children: t('loading') }), state.kind === 'error' && _jsxs("div", { role: "alert", children: [_jsx("p", { children: t('error') }), _jsx("button", { type: "button", onClick: () => { void load(false); }, children: t('retry') })] }), state.kind === 'ready' && (state.candidates.length === 0 ? _jsx("p", { children: t('empty') }) : (_jsxs("div", { children: [_jsx("div", { role: "group", "aria-label": "sort", style: { display: 'flex', gap: 8, margin: '8px 0' }, children: ['published', 'seeders', 'leechers', 'downloads'].map(key => (_jsxs("button", { type: "button", "aria-pressed": sort.key === key, onClick: () => { setSort(current => ({ key, descending: current.key === key ? !current.descending : true })); }, children: [t(key), sort.key === key ? (sort.descending ? ' ↓' : ' ↑') : ''] }, key))) }), _jsx("ul", { style: { listStyle: 'none', padding: 0 }, children: visible.map(candidate => _jsx(CandidateRow, { candidate: candidate, t: t, download: download }, candidate.id)) }), _jsxs("div", { style: { display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }, children: [_jsx("button", { type: "button", disabled: page <= 1, onClick: () => { setPage(value => Math.max(1, value - 1)); }, children: "\u2039" }), _jsxs("span", { "aria-live": "polite", children: [page, " / ", pageCount] }), _jsx("button", { type: "button", disabled: page >= pageCount, onClick: () => { setPage(value => Math.min(pageCount, value + 1)); }, children: "\u203A" })] })] })))] }));
 }
 //# sourceMappingURL=DownloaderPanel.js.map

@@ -58,6 +58,7 @@ export class DownloadRemote extends TypertRemoteService {
         store,
         // RSS wiring arrives in the next step; discovery is explicitly empty for now.
         source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
+        makeSource: keyword => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs }),
         downloader: {
           async add(candidate) {
             const uri = candidate.torrentUrl ?? candidate.magnetUri

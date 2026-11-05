@@ -16,6 +16,8 @@ export interface DownloadService {
 /** Create the service over the three injected seams. */
 export declare function createDownloadService(deps: {
     readonly source: Source;
+    /** Build a source scoped to one search keyword; defaults to the configured source. */
+    readonly makeSource?: (keyword: string) => Source;
     readonly downloader: Downloader;
     readonly store: SubmitStore;
 }): DownloadService;

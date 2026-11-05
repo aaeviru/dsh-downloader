@@ -209,7 +209,8 @@ function createDownloadService(deps) {
 	}
 	return {
 		async search(keyword) {
-			return (await discover()).filter((candidate) => candidate.title.toLowerCase().includes(keyword.toLowerCase()));
+			cache = dedupeCandidates(await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates());
+			return cache;
 		},
 		async listCandidates() {
 			return cache ?? discover();
@@ -346,13 +347,19 @@ const defaultTransport = (url, signal) => fetch(url, { signal });
 function createRssSource(options) {
 	const transport = options.transport ?? defaultTransport;
 	const sourceId = new URL(options.feedUrl).host;
+	const requestUrl = () => {
+		if (options.keyword === void 0 || options.keyword.trim() === "") return options.feedUrl;
+		const url = new URL(options.feedUrl);
+		url.searchParams.set("q", options.keyword);
+		return url.toString();
+	};
 	return { async listCandidates() {
 		const controller = new AbortController();
 		const timer = setTimeout(() => {
 			controller.abort();
 		}, options.timeoutMs);
 		try {
-			const response = await transport(options.feedUrl, controller.signal);
+			const response = await transport(requestUrl(), controller.signal);
 			if (!response.ok) throw new FeedFetchError(response.status);
 			return dedupeCandidates(parseRssFeed(await response.text(), { sourceId }));
 		} finally {
@@ -588,6 +595,11 @@ let DownloadRemote = (() => {
 					store,
 					source: createRssSource({
 						feedUrl: config.feedUrl,
+						timeoutMs: config.timeoutMs
+					}),
+					makeSource: (keyword) => createRssSource({
+						feedUrl: config.feedUrl,
+						keyword,
 						timeoutMs: config.timeoutMs
 					}),
 					downloader: {
