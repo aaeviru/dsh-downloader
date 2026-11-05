@@ -113,6 +113,13 @@ git -c credential.helper='!gh auth git-credential' push
   1. ✅ **已做**：本包已改成 solution 形状 —— `tsconfig.json` 只有 `files: []` + references，实际工程在 `tsconfig.host.json`；`tsc -b` 仍 exit 0，107 条测试、bundle 20.23 kB 均不变。
   2. ❌ **试过但无效**：在 harness 的 `tsconfig.host.json` references 里加 `./packages/experimental/dsh-downloader`，以及改成指向 `.../tsconfig.host.json` 叶配置，两次重跑生成器都仍是「39 个包」，不含本包。改动已回退，harness 保持原样。
   3. 下一步要读 `packages/typert/generator/src/analyzer.ts` 的 `discoverPackages`，弄清它到底按什么枚举包（很可能是遍历 `<root>/packages` 的**真实目录**，符号链接进来的包不在其列）。若是这个原因，可选：(a) 把包做成真实目录（放弃独立仓）；(b) 给生成器加一个显式的包清单配置；(c) 换一条不依赖 typert 生成的浏览器通道。
+- **文档以 harness 目录为准**：`docs/` 的修改要在 harness 目录里做，再用 rsync 同步回独立仓库（反过来会把旧文档带回来，踩过一次）。
+- **Phase 4 第 3 步（客户端）的已知约束**（试过一版后回退，未提交）：
+  - host 叶配置 `tsconfig.host.json` 会连 `src/client` 一起编译，客户端包解析到 harness 源码会报 `TS6059`，因此 host 叶必须 `exclude: ["src/client"]`；
+  - 客户端需要自己的叶配置 + harness `tsconfig.client.json` 的 reference，否则 `lib/types/client/**` 不会产出，`lib/client.js` 也 build 不出来；
+  - `tsdown.config.ts` 要改用 harness 的 `clientBundle` 预设（照 `packages/experimental/hello-page/tsdown.config.ts`）；
+  - 组件四态（loading / empty / list / error）要有测试，文案全部走 `locales.ts`，八个 `locale/*.json` 只放 meta；
+  - 参考实现：`packages/experimental/hello-page`（`src/client/index.ts` 的座位注册、`locale/en.json` 形状）。
 - **Phase 4 第 3–4 步未做**：客户端半边（`src/client/index.ts` + `.tsx` + 座位 + 八语言）、overlay 浏览器验收与 `plugin_manager install_bundle` 桌面安装。
 - 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2、`#6` Phase 3（五者均已实现 + 已 review）、`#7` Phase 4（进行中）。
 
