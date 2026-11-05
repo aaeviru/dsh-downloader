@@ -239,3 +239,28 @@ cd /home/aaevi/projects/dsh-downloader
 - 测试：116 条全绿；`src/source.ts` 覆盖率 100%（含默认 `fetch` 传输、非 2xx、非 XML、超时四个分支）。
 - bundle 已重建并入库（98 个文件）。
 - **已知环境限制**：本机 node 的 `fetch` 连不上外网，所以本地跑真实 feed 会失败；桌面版/正常网络下应可用。若抓取失败，界面会进入 error 态（`Unable to load downloads.`）。
+
+## 14. 产物与源码漂移（三次，同根因）
+
+| # | 表现 | 根因 |
+|---|---|---|
+| 1 | 仓库里没有 `lib/` | `.gitignore` 的 `lib/` 未锚定，把 `bundle/lib/**` 一起吞了 |
+| 2 | 改 `@Remote` 签名后面板报错 | 没重跑 `generate-typert`，wire schema 还是旧的 |
+| 3 | 改完默认 feed URL，产物里仍是旧值（HTTP 400） | `bundle` 脚本只跑 `generate-typert + tsdown`，**没先跑 `tsc -b`**；tsdown 打包的是 `lib/types/`（tsc 产物），源码改了但没重新编译 |
+
+**已修**：`package.json` 的 bundle 脚本改成
+
+```json
+"bundle": "tsc -b . && tsx ../../../scripts/generate-typert.ts && tsdown"
+```
+
+顺序必须是 **编译 → 生成 typert → 打包**。任何一步漏掉，产物都会和源码不一致，而且 `tsc -b` 通过、单元测试全绿都发现不了。
+
+**每次发布前的最小核对**（在仓库里跑）：
+
+```sh
+grep -o "page=rss[^'\"]*" bundle/lib/index.js | head -1
+grep -o "page=rss[^']*" /home/aaevi/projects/deepseek-harness/packages/experimental/dsh-downloader/src/remote.ts | head -1
+```
+
+两行必须一致。更彻底的做法是构建后用 `git diff --exit-code bundle/lib` 检查产物是否就是刚构建的那份。
