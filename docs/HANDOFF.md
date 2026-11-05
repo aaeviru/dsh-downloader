@@ -200,3 +200,16 @@ cd /home/aaevi/projects/dsh-downloader
 模块路由 200、24 KB。
 
 第三层（Playwright 真浏览器点测）仍未做。
+
+## 11. 浏览器验收结果（2026-11-05）
+
+第三层（Playwright 真浏览器）已通过：
+
+```json
+{"masks":0,"sidebarEntryFound":true,"headings":["Downloader"],
+ "emptyState":true,"description":true,"errors":[]}
+```
+
+即：客户端 bundle 被加载 → 侧栏出现 `aria-label="Downloader"` 的图标 → 点击后面板渲染出标题与描述 → `ctx.remote.download.list()` 真实走通（host 侧暂无 RSS source，故显示空态）→ 无 page error。
+
+**首启弹窗不是 Escape 能关的**：它是 "Preview Notice"，必须点 `Continue` 按钮。文档 09 写的「两个弹窗都能用 Escape 关掉」对我们这个版本不成立；稳健写法是循环：有遮罩时优先点 `Continue|Got it|Close`，没有再按 Escape。
