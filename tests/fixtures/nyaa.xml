@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:nyaa="https://sukebei.nyaa.si/xmlns/nyaa" version="2.0">
+	<channel>
+		<title>Synthetic nyaa feed — one item per mapping branch</title>
+		<description>Not a real feed. Every item isolates one field-mapping rule.</description>
+		<link>https://sukebei.nyaa.si/</link>
+		<atom:link href="https://sukebei.nyaa.si/?page=rss" rel="self" type="application/rss+xml" />
+		<item>
+			<title>B1 magnet in link</title>
+			<link>magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567&amp;dn=B1</link>
+			<guid isPermaLink="false">urn:test:nyaa:1</guid>
+			<pubDate>Thu, 05 Nov 2026 10:33:37 -0000</pubDate>
+			<nyaa:seeders>2</nyaa:seeders>
+			<nyaa:leechers>36</nyaa:leechers>
+			<nyaa:downloads>0</nyaa:downloads>
+			<nyaa:infoHash>0123456789abcdef0123456789abcdef01234567</nyaa:infoHash>
+			<nyaa:categoryId>1_1</nyaa:categoryId>
+			<nyaa:category>Art</nyaa:category>
+			<nyaa:size>1.7 GiB</nyaa:size>
+			<nyaa:comments>0</nyaa:comments>
+			<nyaa:trusted>No</nyaa:trusted>
+			<nyaa:remake>No</nyaa:remake>
+			<description><![CDATA[<a href="https://sukebei.nyaa.si/view/9000001">#9000001 | B1</a> | 1.7 GiB | Art]]></description>
+		</item>
+		<item>
+			<title>B2 detail page with torrent enclosure</title>
+			<link>https://sukebei.nyaa.si/view/9000002</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000002</guid>
+			<pubDate>Tue, 03 Nov 2026 08:00:00 -0000</pubDate>
+			<enclosure url="https://sukebei.nyaa.si/download/9000002.torrent" length="1825361101" type="application/x-bittorrent" />
+			<nyaa:infoHash>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</nyaa:infoHash>
+			<nyaa:categoryId>2_2</nyaa:categoryId>
+			<nyaa:category>Real Life - Videos</nyaa:category>
+			<nyaa:size>1.7 GiB</nyaa:size>
+			<nyaa:comments>0</nyaa:comments>
+			<nyaa:trusted>No</nyaa:trusted>
+			<nyaa:remake>No</nyaa:remake>
+		</item>
+		<item>
+			<title>B3 info hash only</title>
+			<link>https://sukebei.nyaa.si/view/9000003</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000003</guid>
+			<pubDate>Wed, 04 Nov 2026 09:15:00 -0000</pubDate>
+			<nyaa:infoHash>bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb</nyaa:infoHash>
+			<nyaa:size>500 MiB</nyaa:size>
+			<nyaa:trusted>No</nyaa:trusted>
+			<nyaa:remake>No</nyaa:remake>
+		</item>
+		<item>
+			<title>B4 no link and no guid</title>
+			<pubDate>Wed, 04 Nov 2026 09:00:00 -0000</pubDate>
+			<nyaa:infoHash>cccccccccccccccccccccccccccccccccccccccc</nyaa:infoHash>
+			<nyaa:size>1.0 GiB</nyaa:size>
+		</item>
+		<item>
+			<title>B11 torrent link without enclosure</title>
+			<link>https://sukebei.nyaa.si/download/9000005.torrent</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000005</guid>
+			<pubDate>Mon, 02 Nov 2026 07:30:00 -0000</pubDate>
+			<nyaa:infoHash>dddddddddddddddddddddddddddddddddddddddd</nyaa:infoHash>
+			<nyaa:size>965.9 MiB</nyaa:size>
+			<nyaa:trusted>No</nyaa:trusted>
+			<nyaa:remake>No</nyaa:remake>
+		</item>
+		<item>
+			<title>B9 B10 unparseable date and size</title>
+			<link>https://sukebei.nyaa.si/view/9000006</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000006</guid>
+			<pubDate>not a date</pubDate>
+			<nyaa:infoHash>eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee</nyaa:infoHash>
+			<nyaa:size>huge</nyaa:size>
+		</item>
+	</channel>
+</rss>

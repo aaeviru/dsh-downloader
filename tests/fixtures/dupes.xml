@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:nyaa="https://sukebei.nyaa.si/xmlns/nyaa" version="2.0">
+	<channel>
+		<title>Synthetic duplicate feed</title>
+		<link>https://sukebei.nyaa.si/</link>
+		<item>
+			<title>B5 duplicate hash, first occurrence</title>
+			<link>https://sukebei.nyaa.si/download/9000101.torrent</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000101</guid>
+			<nyaa:infoHash>FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF</nyaa:infoHash>
+			<nyaa:size>1.0 GiB</nyaa:size>
+		</item>
+		<item>
+			<title>B5 duplicate hash, second occurrence</title>
+			<link>https://sukebei.nyaa.si/download/9000102.torrent</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000102</guid>
+			<nyaa:infoHash>ffffffffffffffffffffffffffffffffffffffff</nyaa:infoHash>
+			<nyaa:size>2.0 GiB</nyaa:size>
+		</item>
+		<item>
+			<title>B6 no hash, shared source url, first occurrence</title>
+			<link>https://sukebei.nyaa.si/view/9000103</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000103</guid>
+			<nyaa:size>3.0 GiB</nyaa:size>
+		</item>
+		<item>
+			<title>B6 no hash, shared source url, second occurrence</title>
+			<link>https://sukebei.nyaa.si/view/9000103</link>
+			<guid isPermaLink="true">https://sukebei.nyaa.si/view/9000103</guid>
+			<nyaa:size>4.0 GiB</nyaa:size>
+		</item>
+	</channel>
+</rss>

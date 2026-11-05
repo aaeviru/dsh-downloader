@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:nyaa="https://sukebei.nyaa.si/xmlns/nyaa">
+	<channel rdf:about="https://sukebei.nyaa.si/">
+		<title>RDF feed</title>
+		<link>https://sukebei.nyaa.si/</link>
+		<items>
+			<rdf:Seq>
+				<rdf:li rdf:resource="https://sukebei.nyaa.si/view/9000201" />
+			</rdf:Seq>
+		</items>
+	</channel>
+	<item rdf:about="https://sukebei.nyaa.si/view/9000201">
+		<title>RDF item with torrent link</title>
+		<link>https://sukebei.nyaa.si/download/9000201.torrent</link>
+		<pubDate>Tue, 03 Nov 2026 08:00:00 -0000</pubDate>
+		<nyaa:infoHash>1111111111111111111111111111111111111111</nyaa:infoHash>
+		<nyaa:size>2.2 GiB</nyaa:size>
+	</item>
+	<item rdf:about="https://sukebei.nyaa.si/view/9000202">
+		<title>RDF item without link</title>
+		<pubDate>Tue, 03 Nov 2026 07:00:00 -0000</pubDate>
+		<nyaa:size>1.0 GiB</nyaa:size>
+	</item>
+</rdf:RDF>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<title>Atom feed</title>
+	<id>urn:test:atom</id>
+	<updated>2026-11-05T10:33:37Z</updated>
+	<entry>
+		<title>Atom entry with enclosure link</title>
+		<id>urn:test:atom:1</id>
+		<updated>2026-11-05T10:33:37Z</updated>
+		<link rel="alternate" type="text/html" href="https://sukebei.nyaa.si/view/9000301" />
+		<link rel="enclosure" type="application/x-bittorrent" href="https://sukebei.nyaa.si/download/9000301.torrent" />
+	</entry>
+	<entry>
+		<title>Atom entry with magnet alternate</title>
+		<id>urn:test:atom:2</id>
+		<published>2026-11-04T09:00:00Z</published>
+		<link rel="alternate" type="application/x-bittorrent" href="magnet:?xt=urn:btih:2222222222222222222222222222222222222222" />
+	</entry>
+</feed>

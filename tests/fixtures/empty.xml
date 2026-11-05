@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:nyaa="https://sukebei.nyaa.si/xmlns/nyaa" version="2.0">
+	<channel>
+		<title>Empty feed</title>
+		<link>https://sukebei.nyaa.si/</link>
+		<description>Well-formed channel with no items.</description>
+	</channel>
+</rss>

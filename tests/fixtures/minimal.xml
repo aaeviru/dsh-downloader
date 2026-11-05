@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+	<channel>
+		<title>Minimal feed</title>
+		<link>https://sukebei.nyaa.si/</link>
+		<item>
+			<title>Only title and link</title>
+			<link>https://sukebei.nyaa.si/view/1</link>
+		</item>
+	</channel>
+</rss>
