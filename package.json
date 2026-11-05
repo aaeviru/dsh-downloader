@@ -19,13 +19,16 @@
   },
   "dependencies": {
     "fast-xml-parser": "5.11.1",
-    "fast-xml-validator": "1.4.2"
+    "fast-xml-validator": "1.4.2",
+    "@deepseek-ai/dsh-tools": "workspace:*"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-tools": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-tools": "workspace:*"
   },
   "license": "MIT",
   "description": "Downloader plugin for DeepSeek Harness (skeleton).",

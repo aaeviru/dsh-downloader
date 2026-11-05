@@ -46,7 +46,7 @@ pnpm vitest run packages/experimental/dsh-downloader/tests/service.spec.ts packa
 
 ## 硬约束
 
-不改 `scripts/`、`packages/bundle/`；不 import `@deepseek-ai/*` 的值（仅 `import type`）；不跑 git / pnpm install；不访问 NAS；不在日志或工具结果里输出 token。
+不改 `scripts/`、`packages/bundle/`；允许从框架包（`@deepseek-ai/cordis`、`@deepseek-ai/dsh-tools`）值导入，**禁止值导入其它插件包**——`client-bundle-purity` 只作用于 client bundle，本包当前没有 client 半，所以框架值导入是正常的（原先那句「不 import 任何 `@deepseek-ai/*` 的值」是从 hello-page 抄来的，那是个 client 插件）；不跑 git / pnpm install；不访问 NAS；不在日志或工具结果里输出 token。
 
 跟踪 issue：[#5](https://github.com/aaeviru/dsh-downloader/issues/5)
 
