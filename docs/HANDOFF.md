@@ -52,7 +52,9 @@ git -c credential.helper='!gh auth git-credential' push
 2. **`tsdown.config.ts` 不能用仓库内相对路径**。它从真身目录加载，`../../client/tsdown.client.ts` 会解析到 `~/client`。改为从 `DSH_CHECKOUT`（默认 `/home/aaevi/projects/deepseek-harness`）定位构建预设。
 3. **派 Codex 必须以真身目录为 cwd**。它的 `sandbox_mode = "workspace-write"` 以启动 cwd 为唯一写根，`~/.codex/config.toml` 只 trust 了 `deepseek-harness`；从 harness 启动时写入真身会被判成「项目外」，报 `Read-only file system`。用 `cwd=/home/aaevi/projects/dsh-downloader` 启动即可。
 
-换机器、改目录名、移植到 Windows 时，要同步改这四处：`tsconfig.json` 的 5 条绝对路径、`tsdown.config.ts` 的默认兜底值、profile 白名单里的路径、以及 Codex 的启动 cwd。
+4. **值导入 harness 包必须加项目引用**。`tsconfig.base.json` 的 `paths` 把 `@deepseek-ai/*` 映射到**源码**，而本包 `rootDir` 只有 `src`，于是 `import { defineTool } from '@deepseek-ai/dsh-tools'` 会报 `TS6059/TS6307`（文件不在 rootDir 内）。修法：在 `tsconfig.json` 的 `references` 里加上该包的项目路径（已有 `vendor/cordis` 与 `packages/core/tools` 两条）。只加 `dependencies` 不够。
+
+换机器、改目录名、移植到 Windows 时，要同步改这五处：`tsconfig.json` 的 5 条绝对路径、`tsconfig.json` 的 2 条项目引用、`tsdown.config.ts` 的默认兜底值、profile 白名单里的路径、以及 Codex 的启动 cwd。
 
 ## 3. 已完成
 
@@ -73,7 +75,13 @@ git -c credential.helper='!gh auth git-credential' push
   - `tests/coordinator.spec.ts`：12 条用例，纯内存假接缝，不起 socket
   - `[CONTRACT v3]` 挂在 #4（含一处规格矛盾的裁决：`refresh()` 自动提交）；`[REVIEW]` 已发（[#4 comment 6657462793](https://github.com/aaeviru/dsh-downloader/issues/4#issuecomment-6657462793)），B1–B8 全部 VERIFIED。**等待人类 `[DECISION]`。**
   - **人工端到端验收未做**：接真实 NAS 提交一条的任务书要求「必须得到用户明确同意」，尚未授权。
-- 六个任务 issue：`#2` Phase 1a（已实现 + 已 review）、`#3` 1b（已实现 + 已 review）、`#4` 1c（已实现 + 已 review）、`#5` Phase 2、`#6` Phase 3、`#7` Phase 4。
+- **Phase 2 已实现并提交**：`a26bab1 feat: add the download service and its three model tools`。
+  - `src/service.ts`：`createDownloadService({ source, downloader, store })`，`search` / `listCandidates` / `add` / `status` / `refresh`，`UnknownCandidateError`
+  - `src/tools.ts`：`createDownloadTools(service, { clock })` → `download_search` / `download_add` / `download_status`（`defineTool`）
+  - `tests/service.spec.ts` + `tests/tools.spec.ts`：17 条用例，全内存假接缝
+  - `[CONTRACT v4]` 挂在 #5；`[REVIEW]` 已发（[#5 comment 6657791377](https://github.com/aaeviru/dsh-downloader/issues/5#issuecomment-6657791377)），B1–B9 全部 VERIFIED。**等待人类 `[DECISION]`。**
+  - 两处偏差：① Remote 命名空间与 UI 一起推迟到 Phase 4（Typert 生成的客户端类型需要 harness 侧登记）；② `download_add` 只记录 `candidateId` + `triggeredAt`，未写触发者身份（会话日志可追溯）。
+- 六个任务 issue：`#2` 1a、`#3` 1b、`#4` 1c、`#5` Phase 2（前三者与 Phase 2 均已实现 + 已 review）、`#6` Phase 3、`#7` Phase 4。
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
@@ -115,9 +123,9 @@ cd /home/aaevi/projects/dsh-downloader
 
 ## 7. 下一步
 
-1. 人类在 #2 / #3 / #4 对各 `[REVIEW]` 回 `[DECISION]`。
+1. 人类在 #2 / #3 / #4 / #5 对各 `[REVIEW]` 回 `[DECISION]`。
 2. 真实链路验收（1c）：需要人类明确同意后，用 `10.0.0.7:8082` + 示例 RSS 手动提交一条，**默认不自动提交**。
-3. Phase 2（#5）→ Phase 3（#6）→ Phase 4（#7）。
+3. Phase 3（#6，持久化 / 轮询 / 规则）→ Phase 4（#7，UI + Remote 接线 + `src/index.ts` 插件注册）。
 
 ## 8. 明确未验证的 / 已知缺口
 
