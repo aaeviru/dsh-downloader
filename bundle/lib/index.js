@@ -5614,7 +5614,7 @@ let DownloadRemote = (() => {
 			tokenRef: z.string().default("ARIA2_TOKEN"),
 			timeoutMs: z.number().min(1).default(15e3),
 			storePath: z.string().default("downloader/submissions.json"),
-			feedUrl: z.string().default("https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0")
+			feedUrl: z.string().default("https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=0c=0_0&f=2")
 		});
 		/** The service the tools and the Remote methods share. */
 		service = __runInitializers(this, _instanceExtraInitializers);
