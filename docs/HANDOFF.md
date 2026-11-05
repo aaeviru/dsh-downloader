@@ -38,6 +38,19 @@ pnpm install --filter dsh-downloader
 
 **副作用**：根目录安装会在 `pnpm-lock.yaml` 增加一条 importer 记录（`packages/experimental/dsh-downloader:`）。**这个改动永远不要提交** —— CI 上没有该目录，`--frozen-lockfile` 会失败。`pnpm-lock.yaml` 的 `M` 状态是预期的（`hello-page` 那条也是同样来源）。
 
+### Lint
+
+包目录被 `.git/info/exclude` 排除，oxlint 在 harness 里会跳过它（`No files found`）。改为从独立仓库目录跑，并把 `--tsconfig` 指向 host 叶配置：
+
+```sh
+cd ~/projects/dsh-downloader
+~/projects/deepseek-harness/node_modules/.bin/oxlint \
+  -c ~/projects/deepseek-harness/.oxlintrc.json \
+  --tsconfig ./tsconfig.host.json .
+```
+
+为此 `tsconfig.host.json` 设了 `typeRoots: ["<harness>/node_modules/@types"]`（本包不在 harness node_modules 的解析范围内）。
+
 ### 推送
 
 需要 gh 凭据助手（沙箱内没有 git 凭据）：
