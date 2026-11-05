@@ -231,3 +231,11 @@ cd /home/aaevi/projects/dsh-downloader
 **两个后续事项**：
 1. `version: "0.0.0"` 不影响 profile 安装，但会让 `verify-npm-install-layout` 之类的仓库门禁失败，进正式流程前要改成真实版本号。
 2. 提交构建产物后必须核对 `git ls-files bundle | wc -l` 与实际文件数（曾因 `.gitignore` 的 `lib/` 未锚定根目录，`bundle/lib/**` 被整体忽略）。
+
+## 13. RSS source 已接线（2026-11-05）
+
+`src/source.ts`：`createRssSource({ feedUrl, timeoutMs, transport? })` → 取 feed、`parseRssFeed`、`dedupeCandidates`。Config 新增 `feedUrl`（默认 sukebei 示例 feed）。`src/remote.ts` 已把它接进 `DownloadService`。
+
+- 测试：116 条全绿；`src/source.ts` 覆盖率 100%（含默认 `fetch` 传输、非 2xx、非 XML、超时四个分支）。
+- bundle 已重建并入库（98 个文件）。
+- **已知环境限制**：本机 node 的 `fetch` 连不上外网，所以本地跑真实 feed 会失败；桌面版/正常网络下应可用。若抓取失败，界面会进入 error 态（`Unable to load downloads.`）。
