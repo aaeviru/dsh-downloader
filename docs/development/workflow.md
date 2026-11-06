@@ -2,10 +2,6 @@
 
 本规范采用简化的 GitHub Flow，并为 Agent 协作增加可追溯的 Review Gate。它约束本仓库的需求、实现、验证、审查和交付方式；`main` 始终代表稳定基线。
 
-> 生效说明：本文件记录目标流程。规则是否已经由 GitHub 或 CI 技术强制，必须以仓库当时的实际配置和运行证据为准，不能仅凭本文宣称。
->
-> 不在本文范围：`main` 分支保护由仓库所有者自行配置；从既有 55 个 `main` 提交迁移的计划记录在 [Issue #13](https://github.com/aaeviru/dsh-downloader/issues/13)。本文和相关 PR 仅引用该 Issue，不自动关闭它。
-
 ## 1. 核心原则
 
 - Issue 定义任务边界；PR 承载实现；验证提供技术证据；Critic 提供审查证据；人类决定是否合入。
@@ -191,19 +187,6 @@ dsh-downloader/
 - 并行开发不代表并行合入。多个 PR 修改同一模块时，后合入者必须基于最新 `main` 处理冲突、重跑验证，并重新取得绑定新 SHA 的 Review。
 - 不要把另一个 Worktree 的未提交文件、依赖目录或生成物复制来制造通过结果。
 - 删除 Worktree 或分支前，确认提交已推送、PR 状态明确且没有需要保留的未提交工作。
-
-## 9. v1 落地优先级
-
-按以下顺序推进，每一步都以实际证据为准：
-
-1. 将本规范通过 Issue #12 的短分支和 PR 入库。
-2. 按 [Issue #13](https://github.com/aaeviru/dsh-downloader/issues/13) 记录并冻结迁移基线，不重写历史。
-3. 另开 Issue/PR，基于真实 DSH 构建环境实现 `scripts/verify.sh`、CI 和 PR 模板。
-4. 确认 GitHub 上 `verify` job 实际运行成功后，由仓库所有者逐项启用 `main` 保护。
-5. 选择下一项真实功能演练完整流程：Issue Contract → Worker → Draft PR → verify → Critic → 人工决定。
-6. 稳定后再考虑 Critic Check、覆盖率阈值、Merge Queue 或 Release 自动化。
-
-v1 暂不引入长期发布分支、自动 Approval、自动合并、复杂 Release 流程或仅为展示而增加的 Agent 层级。
 
 ## 附录：Ready for Merge 检查表
 
