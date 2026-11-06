@@ -1,1 +1,1 @@
-{"version":3,"file":"store-json.d.ts","sourceRoot":"","sources":["../../src/store-json.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,YAAY,CAAA;AAEpD,mEAAmE;AACnE,wBAAgB,gCAAgC,CAAC,IAAI,EAAE,MAAM,GAAG,kBAAkB,CAkCjF"}
+{"version":3,"file":"store-json.d.ts","sourceRoot":"","sources":["../../src/store-json.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,YAAY,CAAA;AAEpD;;;;GAIG;AACH,wBAAgB,gCAAgC,CAAC,IAAI,EAAE,MAAM,GAAG,kBAAkB,CAkCjF"}

@@ -125,13 +125,9 @@ git -c credential.helper='!gh auth git-credential' push
 
 ## 4. 协作协议（来自 `aaeviru/brainstorming`）
 
-> **2026-11-06 决定：不再走「临时改一改」的捷径。** 所有改动先在本仓库开 issue，按
-> `[CONTRACT]` → `[DECISION]` → `[IMPLEMENTATION]`（Codex）→ 验收方独立重跑门禁 →
-> `[REVIEW]`（逐点 VERIFIED + 证据）→ `[DECISION]` 走完。
+> **2026-11-06 决定：不再走「临时改一改」的捷径。** 所有改动先在本仓库开 issue，按 `[CONTRACT]` → `[DECISION]` → `[IMPLEMENTATION]`（Codex）→ 验收方独立重跑门禁 → `[REVIEW]`（逐点 VERIFIED + 证据）→ `[DECISION]` 走完。
 >
-> 理由是实测的：三次产物漂移（`.gitignore` 吞 `lib/`、typert 未重生成、构建未先编译）
-> 全部发生在「直接改代码、跑通 tsc+单测就提交」的路上，且单测一次都没抓到。
-> issue 模式强制把「构建产物与源码一致」「wire schema 同步」这类检查写进验收清单。
+> 理由是实测的：三次产物漂移（`.gitignore` 吞 `lib/`、typert 未重生成、构建未先编译）全部发生在「直接改代码、跑通 tsc+单测就提交」的路上，且单测一次都没抓到。issue 模式强制把「构建产物与源码一致」「wire schema 同步」这类检查写进验收清单。
 
 
 - 评论首行署名：`DeepSeek:`（plan/review 边界）、`Codex:`（worker 边界）。
@@ -199,14 +195,11 @@ cd /home/aaevi/projects/dsh-downloader
 
 用 `dsh web --patch <overlay>` 按**包名**插入实验插件时，三件事缺一不可，顺序如下：
 
-1. **`tsconfig.base.json` 的 `paths` 必须有本包别名**。插件加载器经 tsx 用这份映射解析包名。包名与目录名不一致时生成器会明确拒绝（见 `dsh-plugin-docs` 01 篇坑 #9），必须手写三条：
-   `@deepseek-ai/dsh-experimental-downloader`、`.../types`、`.../client`。
+1. **`tsconfig.base.json` 的 `paths` 必须有本包别名**。插件加载器经 tsx 用这份映射解析包名。包名与目录名不一致时生成器会明确拒绝（见 `dsh-plugin-docs` 01 篇坑 #9），必须手写三条：`@deepseek-ai/dsh-experimental-downloader`、`.../types`、`.../client`。
 2. **改包名后必须重跑 `generate-typert`**。否则 `lib/typert.host.js` 里仍是旧包名，加载时报 `TYPERT manifest names package "dsh-downloader" — the manifest must be owned by the package that exports it`。
 3. **起服务要 `cd` 到 harness 根目录**（tsx 才会应用 paths），且 `DSH_HOME` 指向可写目录。
 
-实测结果：overlay 按包名插入后无告警，boot payload 含
-`{"id":"@deepseek-ai/dsh-experimental-downloader","url":"plugins/??@deepseek-ai/dsh-experimental-downloader/client.js&rev=da3ae259b67c"}`，
-模块路由 200、24 KB。
+实测结果：overlay 按包名插入后无告警，boot payload 含 `{"id":"@deepseek-ai/dsh-experimental-downloader","url":"plugins/??@deepseek-ai/dsh-experimental-downloader/client.js&rev=da3ae259b67c"}`，模块路由 200、24 KB。
 
 第三层（Playwright 真浏览器点测）仍未做。
 

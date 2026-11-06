@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-experimental-downloader",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "private": true,
   "main": "lib/index.js",
@@ -66,7 +66,7 @@
     "fast-xml-validator": "1.4.2"
   },
   "license": "MIT",
-  "description": "Downloader plugin for DeepSeek Harness (skeleton).",
+  "description": "Experimental aria2 downloader: RSS candidate discovery, guided submission over JSON-RPC, and a browser status panel.",
   "files": [
     "lib/index.js",
     "lib/types/**/*.d.ts",

@@ -44,7 +44,7 @@ it.each([false, true])('wires persistent store, credentials, tools and disposal 
       },
     }
     const config = Config({ storePath: absolute ? join(directory, 'records.json') : 'records.json' })
-    apply(ctx as Context, config)
+    apply(ctx as unknown as Context, config)
     await Promise.all(effects)
     const deps = vi.mocked(createDownloadService).mock.calls.at(-1)![0]
     const [service, options] = vi.mocked(createDownloadTools).mock.calls.at(-1)!

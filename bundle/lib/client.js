@@ -192,9 +192,24 @@ window.__ModuleLoader__.load({
 		}));
 		let _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value ??= zod.z.object({
+			"candidates": zod.z.array(zod.z.object({
+				"id": zod.z.string().readonly(),
+				"sourceId": zod.z.string().readonly(),
+				"title": zod.z.string().readonly(),
+				"publishedAt": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
+				"infoHash": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
+				"magnetUri": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
+				"torrentUrl": zod.z.union([zod.z.literal(null), zod.z.string()]).readonly(),
+				"sizeBytes": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly(),
+				"seeders": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Swarm seeders when the feed reports them."),
+				"leechers": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Swarm leechers when the feed reports them."),
+				"downloads": zod.z.union([zod.z.literal(null), zod.z.number()]).readonly().optional().describe("Completed downloads when the feed reports them."),
+				"sourceUrl": zod.z.string().readonly(),
+				"submittable": zod.z.boolean().readonly(),
+				"dedupeKey": zod.z.string().readonly()
+			})).readonly(),
 			"discovered": zod.z.number().readonly(),
-			"added": zod.z.number().readonly(),
-			"skipped": zod.z.number().readonly(),
+			"known": zod.z.number().readonly(),
 			"unsubmittable": zod.z.number().readonly()
 		});
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value;
@@ -231,9 +246,11 @@ window.__ModuleLoader__.load({
 			methods: {
 				"download/add": {
 					service: "download",
+					description: "Submit one cached candidate to aria2.",
 					invocation: { kind: "direct" },
 					parameters: [{
 						name: "candidateId",
+						description: "identifier from the current candidate set.",
 						source: "json",
 						codec: {
 							mode: "strict",
@@ -252,22 +269,25 @@ window.__ModuleLoader__.load({
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#SubmitResult",
 						create: _deepseek_ai_dsh_experimental_downloader_download_add_result$schema,
+						description: "the submission outcome, GID, timestamp, and call ID.",
 						jsonSchemaError: "typert tool schema: selected union branches overlap or have no required discriminator"
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 100,
+						"line": 106,
 						"column": 3
 					}
 				},
 				"download/list": {
 					service: "download",
+					description: "List the cached candidates, discovering them on first use.",
 					invocation: { kind: "direct" },
 					parameters: [],
 					result: {
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/list:result",
 						create: _deepseek_ai_dsh_experimental_downloader_download_list_result$schema,
+						description: "the current candidate set.",
 						jsonSchema: {
 							"type": "array",
 							"items": {
@@ -340,30 +360,100 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 95,
+						"line": 96,
 						"column": 3
 					}
 				},
 				"download/refresh": {
 					service: "download",
+					description: "Rediscover the last executed query without submitting downloads.",
 					invocation: { kind: "direct" },
 					parameters: [],
 					result: {
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#RefreshResult",
 						create: _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema,
+						description: "the candidates and discovery counts; source failure preserves the previous cache.",
 						jsonSchema: {
 							"type": "object",
 							"properties": {
+								"candidates": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"id": { "type": "string" },
+											"sourceId": { "type": "string" },
+											"title": { "type": "string" },
+											"publishedAt": { "oneOf": [{
+												"type": "null",
+												"const": null
+											}, { "type": "string" }] },
+											"infoHash": { "oneOf": [{
+												"type": "null",
+												"const": null
+											}, { "type": "string" }] },
+											"magnetUri": { "oneOf": [{
+												"type": "null",
+												"const": null
+											}, { "type": "string" }] },
+											"torrentUrl": { "oneOf": [{
+												"type": "null",
+												"const": null
+											}, { "type": "string" }] },
+											"sizeBytes": { "oneOf": [{
+												"type": "null",
+												"const": null
+											}, { "type": "number" }] },
+											"seeders": {
+												"oneOf": [{
+													"type": "null",
+													"const": null
+												}, { "type": "number" }],
+												"description": "Swarm seeders when the feed reports them."
+											},
+											"leechers": {
+												"oneOf": [{
+													"type": "null",
+													"const": null
+												}, { "type": "number" }],
+												"description": "Swarm leechers when the feed reports them."
+											},
+											"downloads": {
+												"oneOf": [{
+													"type": "null",
+													"const": null
+												}, { "type": "number" }],
+												"description": "Completed downloads when the feed reports them."
+											},
+											"sourceUrl": { "type": "string" },
+											"submittable": { "type": "boolean" },
+											"dedupeKey": { "type": "string" }
+										},
+										"required": [
+											"id",
+											"sourceId",
+											"title",
+											"publishedAt",
+											"infoHash",
+											"magnetUri",
+											"torrentUrl",
+											"sizeBytes",
+											"sourceUrl",
+											"submittable",
+											"dedupeKey"
+										],
+										"additionalProperties": true
+									}
+								},
 								"discovered": { "type": "number" },
-								"added": { "type": "number" },
-								"skipped": { "type": "number" },
+								"known": { "type": "number" },
 								"unsubmittable": { "type": "number" }
 							},
 							"required": [
+								"candidates",
 								"discovered",
-								"added",
-								"skipped",
+								"known",
 								"unsubmittable"
 							],
 							"additionalProperties": true
@@ -371,15 +461,17 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 110,
+						"line": 125,
 						"column": 3
 					}
 				},
 				"download/search": {
 					service: "download",
+					description: "Search candidates through the service for one keyword.",
 					invocation: { kind: "direct" },
 					parameters: [{
 						name: "keyword",
+						description: "text matched against candidate titles.",
 						source: "json",
 						codec: {
 							mode: "strict",
@@ -398,6 +490,7 @@ window.__ModuleLoader__.load({
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/search:result",
 						create: _deepseek_ai_dsh_experimental_downloader_download_search_result$schema,
+						description: "the matching candidates after deduplication.",
 						jsonSchema: {
 							"type": "array",
 							"items": {
@@ -470,15 +563,17 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 90,
+						"line": 87,
 						"column": 3
 					}
 				},
 				"download/status": {
 					service: "download",
+					description: "Read the state of one aria2 download.",
 					invocation: { kind: "direct" },
 					parameters: [{
 						name: "gid",
+						description: "aria2 download identifier returned by a submission.",
 						source: "json",
 						codec: {
 							mode: "strict",
@@ -497,6 +592,7 @@ window.__ModuleLoader__.load({
 						mode: "strict",
 						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/status:result",
 						create: _deepseek_ai_dsh_experimental_downloader_download_status_result$schema,
+						description: "the aria2-reported state for that GID.",
 						jsonSchema: {
 							"type": "object",
 							"properties": { "state": { "type": "string" } },
@@ -506,7 +602,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 105,
+						"line": 116,
 						"column": 3
 					}
 				}
@@ -618,22 +714,27 @@ window.__ModuleLoader__.load({
 				descending: true
 			});
 			const [keyword, setKeyword] = (0, react.useState)("");
+			const lastExecutedKeyword = (0, react.useRef)(void 0);
+			const [candidates, setCandidates] = (0, react.useState)([]);
 			const [page, setPage] = (0, react.useState)(1);
 			const pageSize = 20;
 			const load = (0, react.useCallback)(async (refresh) => {
 				setState({ kind: "loading" });
 				try {
-					if (refresh) {
-						if (!(await download.refresh()).ok) {
+					if (refresh && lastExecutedKeyword.current === void 0) {
+						const result = await download.refresh();
+						if (!result.ok) {
 							setState({ kind: "error" });
 							return;
 						}
+						setCandidates(result.value.candidates);
+						setState({ kind: "ready" });
+					} else {
+						const result = refresh ? await download.search(lastExecutedKeyword.current) : await download.list();
+						if (result.ok) setCandidates(result.value);
+						setState(result.ok ? { kind: "ready" } : { kind: "error" });
 					}
-					const result = await download.list();
-					setState(result.ok ? {
-						kind: "ready",
-						candidates: result.value
-					} : { kind: "error" });
+					setPage(1);
 				} catch {
 					setState({ kind: "error" });
 				}
@@ -644,17 +745,16 @@ window.__ModuleLoader__.load({
 			const runSearch = (0, react.useCallback)(async () => {
 				setState({ kind: "loading" });
 				setPage(1);
+				lastExecutedKeyword.current = keyword;
 				try {
 					const result = await download.search(keyword);
-					setState(result.ok ? {
-						kind: "ready",
-						candidates: result.value
-					} : { kind: "error" });
+					if (result.ok) setCandidates(result.value);
+					setState(result.ok ? { kind: "ready" } : { kind: "error" });
 				} catch {
 					setState({ kind: "error" });
 				}
 			}, [download, keyword]);
-			const ordered = state.kind === "ready" ? order(state.candidates, sort) : [];
+			const ordered = order(candidates, sort);
 			const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
 			const visible = ordered.slice((page - 1) * pageSize, page * pageSize);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
@@ -719,12 +819,12 @@ window.__ModuleLoader__.load({
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("error") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 							type: "button",
 							onClick: () => {
-								load(false);
+								load(true);
 							},
 							children: t("retry")
 						})]
 					}),
-					state.kind === "ready" && (state.candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
+					(state.kind === "ready" || candidates.length > 0) && (candidates.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("empty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							style: {
 								display: "grid",
@@ -889,7 +989,11 @@ window.__ModuleLoader__.load({
 		};
 		//#endregion
 		//#region src/client/mount.ts
-		/** Register localized downloader seats with context-owned cleanup. */
+		/**
+		* Register localized downloader seats with context-owned cleanup.
+		* @param ctx - Client context owning the locale dictionaries and slot registrations.
+		* @param download - Download operations injected into the downloader panel.
+		*/
 		function mountDownloader(ctx, download) {
 			ctx.effect(() => ctx.locale.register(NS, {
 				en,

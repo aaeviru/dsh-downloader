@@ -1,9 +1,19 @@
 import { dedupeCandidates } from './candidate.ts'
 import type { Candidate } from './candidate.ts'
 import { createDownloadCoordinator } from './coordinator.ts'
-import type { Downloader, RefreshResult, Source, SubmitResult, SubmitStore } from './coordinator.ts'
+import type { Downloader, Source, SubmitResult, SubmitStore } from './coordinator.ts'
 
+/** Read-only discovery results; known counts keys already recorded in the submission store. */
+export interface RefreshResult {
+  readonly candidates: readonly Candidate[]
+  readonly discovered: number
+  readonly known: number
+  readonly unsubmittable: number
+}
+
+/** The requested identifier is absent from the candidate set available to the service. */
 export class UnknownCandidateError extends Error {
+  /** Requested identifier that could not be resolved for submission. */
   readonly candidateId: string
 
   constructor(candidateId: string) {
@@ -13,15 +23,21 @@ export class UnknownCandidateError extends Error {
   }
 }
 
+/** Caches discovered candidates for identifier-based submission; search replaces the cache and refresh reloads it. */
 export interface DownloadService {
   search(keyword: string): Promise<readonly Candidate[]>
   listCandidates(): Promise<readonly Candidate[]>
   add(candidateId: string): Promise<SubmitResult>
   status(gid: string): Promise<{ state: string }>
+  /** Reload the last executed query once; failure preserves the cache and submission records. */
   refresh(): Promise<RefreshResult>
 }
 
-/** Create the service over the three injected seams. */
+/**
+ * Create the service over the three injected seams.
+ * @param deps - Discovery, optional keyword-scoped discovery, downloader, and submission storage providers.
+ * @returns A service with a private candidate cache; unknown submission identifiers reject with UnknownCandidateError.
+ */
 export function createDownloadService(deps: {
   readonly source: Source
   /** Build a source scoped to one search keyword; defaults to the configured source. */
@@ -30,18 +46,18 @@ export function createDownloadService(deps: {
   readonly store: SubmitStore
 }): DownloadService {
   const coordinator = createDownloadCoordinator(deps)
+  let source = deps.source
   let cache: readonly Candidate[] | undefined
 
   async function discover(): Promise<readonly Candidate[]> {
-    cache = dedupeCandidates(await deps.source.listCandidates())
+    cache = dedupeCandidates(await source.listCandidates())
     return cache
   }
 
   return {
     async search(keyword) {
-      const candidates = await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates()
-      cache = dedupeCandidates(candidates)
-      return cache
+      source = deps.makeSource ? deps.makeSource(keyword) : deps.source
+      return discover()
     },
     async listCandidates() {
       return cache ?? discover()
@@ -56,9 +72,13 @@ export function createDownloadService(deps: {
       return deps.downloader.status(gid)
     },
     async refresh() {
-      const result = await coordinator.refresh()
-      await discover()
-      return result
+      const candidates = await discover()
+      return {
+        candidates,
+        discovered: candidates.length,
+        known: candidates.filter(candidate => deps.store.has(candidate.dedupeKey)).length,
+        unsubmittable: candidates.filter(candidate => !candidate.submittable).length,
+      }
     },
   }
 }

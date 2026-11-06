@@ -1,7 +1,11 @@
 import { chmod, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-/** Backend storing submit records as a JSON document at `path`. */
+/**
+ * Backend storing submit records as a JSON document at `path`.
+ * @param path - Destination file; missing files load as empty, while malformed contents reject.
+ * @returns A backend that replaces the file through a temporary file and applies owner-only permissions.
+ */
 export function createJsonFileSubmitStoreBackend(path) {
     return {
         async load() {

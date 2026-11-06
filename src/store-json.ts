@@ -3,7 +3,11 @@ import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import type { SubmitStoreBackend } from './store.ts'
 
-/** Backend storing submit records as a JSON document at `path`. */
+/**
+ * Backend storing submit records as a JSON document at `path`.
+ * @param path - Destination file; missing files load as empty, while malformed contents reject.
+ * @returns A backend that replaces the file through a temporary file and applies owner-only permissions.
+ */
 export function createJsonFileSubmitStoreBackend(path: string): SubmitStoreBackend {
   return {
     async load() {

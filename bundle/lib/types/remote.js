@@ -34,9 +34,9 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
 };
 import { credentialRef } from '@deepseek-ai/dsh-credentials';
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
-import z from '@deepseek-ai/schemastery';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { Config } from "./config.js";
 import { createAria2Client } from "./aria2.js";
 import { createDownloadService } from "./service.js";
 import { createRssSource } from "./source.js";
@@ -76,13 +76,10 @@ let DownloadRemote = (() => {
             if (_metadata) Object.defineProperty(this, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         }
         static inject = ['typert', 'credentials'];
-        static Config = z.object({
-            endpoint: z.string().default('http://10.0.0.7:8082/jsonrpc'),
-            tokenRef: z.string().default('ARIA2_TOKEN'),
-            timeoutMs: z.number().min(1).default(15000),
-            storePath: z.string().default('downloader/submissions.json'),
-            feedUrl: z.string().default('https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2'),
-        });
+        /** Mount schema shared with the plugin entry. */
+        static get Config() {
+            return Config;
+        }
         /** The service the tools and the Remote methods share. */
         service = __runInitializers(this, _instanceExtraInitializers);
         constructor(ctx, config) {
@@ -125,18 +122,41 @@ let DownloadRemote = (() => {
                 refresh: async () => (await ready).refresh(),
             };
         }
+        /**
+         * Search candidates through the service for one keyword.
+         * @param keyword - text matched against candidate titles.
+         * @returns the matching candidates after deduplication.
+         */
         search(keyword) {
             return this.service.search(keyword);
         }
+        /**
+         * List the cached candidates, discovering them on first use.
+         * @returns the current candidate set.
+         */
         list() {
             return this.service.listCandidates();
         }
+        /**
+         * Submit one cached candidate to aria2.
+         * @param candidateId - identifier from the current candidate set.
+         * @returns the submission outcome, GID, timestamp, and call ID.
+         */
         add(candidateId) {
             return this.service.add(candidateId);
         }
+        /**
+         * Read the state of one aria2 download.
+         * @param gid - aria2 download identifier returned by a submission.
+         * @returns the aria2-reported state for that GID.
+         */
         status(gid) {
             return this.service.status(gid);
         }
+        /**
+         * Rediscover the last executed query without submitting downloads.
+         * @returns the candidates and discovery counts; source failure preserves the previous cache.
+         */
         refresh() {
             return this.service.refresh();
         }

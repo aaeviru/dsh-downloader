@@ -1,17 +1,34 @@
 import { credentialRef } from "@deepseek-ai/dsh-credentials";
 import { Remote, TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
-import z from "@deepseek-ai/schemastery";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import z from "@deepseek-ai/schemastery";
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { defineTool } from "@deepseek-ai/dsh-tools";
+//#region lib/types/config.js
+/** Downloader mount settings shared by the plugin entry and the Remote service. */
+/** Parse mount settings and supply defaults for omitted fields. */
+const Config = z.object({
+	endpoint: z.string().default("http://10.0.0.7:8082/jsonrpc"),
+	tokenRef: z.string().default("ARIA2_TOKEN"),
+	timeoutMs: z.number().min(1).default(15e3),
+	storePath: z.string().default("downloader/submissions.json"),
+	feedUrl: z.string().default("https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2")
+});
+//#endregion
 //#region lib/types/aria2.js
+/** Base failure type for aria2 calls, including authentication, deadline, and protocol failures. */
 var Aria2Error = class extends Error {};
+/** JSON-RPC error code 1 returned by aria2; the message identifies the method with the token removed. */
 var Aria2AuthError = class extends Aria2Error {};
+/** The call deadline expired; cancellation does not establish whether aria2 accepted the operation. */
 var Aria2TimeoutError = class extends Aria2Error {};
+/** Transport, HTTP, or response-validation failure with token-redacted response diagnostics. */
 var Aria2ProtocolError = class extends Aria2Error {
+	/** HTTP status, or zero when no response was received. */
 	status;
+	/** Response text with the configured token removed, truncated to 200 UTF-8 bytes before decoding. */
 	bodyPreview;
 	constructor(message, status, bodyPreview) {
 		super(message);
@@ -39,7 +56,12 @@ const fetchTransport = (request) => fetch(request.url, {
 	body: request.body,
 	signal: request.signal
 });
-/** Create a client. `transport` defaults to a thin wrapper over global fetch. */
+/**
+* Create a client. `transport` defaults to a thin wrapper over global fetch.
+* @param config - Endpoint, authentication token, and deadline covering transport and response parsing.
+* @param transport - Sends each JSON-RPC request, using its signal for cancellation.
+* @returns A client that validates responses and reports authentication, timeout, or protocol failures.
+*/
 function createAria2Client(config, transport = fetchTransport) {
 	const { endpoint, timeoutMs } = config;
 	const token = config.token === "" ? null : config.token;
@@ -121,6 +143,11 @@ function createAria2Client(config, transport = fetchTransport) {
 }
 //#endregion
 //#region lib/types/candidate.js
+/**
+* Normalize a hexadecimal or base32 BitTorrent info hash.
+* @param raw - A 40-digit hexadecimal or 32-character base32 hash, without surrounding whitespace.
+* @returns The lowercase hexadecimal hash, or null for absent or invalid input.
+*/
 function normalizeInfoHash(raw) {
 	if (typeof raw !== "string") return null;
 	if (/^[a-f0-9]{40}$/i.test(raw)) return raw.toLowerCase();
@@ -131,6 +158,11 @@ function normalizeInfoHash(raw) {
 	for (let offset = 0; offset < bits.length; offset += 8) hex += Number.parseInt(bits.slice(offset, offset + 8), 2).toString(16).padStart(2, "0");
 	return hex;
 }
+/**
+* Retain the first candidate for each deduplication key without mutating the input.
+* @param list - Candidates in preferred retention order.
+* @returns A new array retaining original candidate objects and their relative order.
+*/
 function dedupeCandidates(list) {
 	const seen = /* @__PURE__ */ new Set();
 	return list.filter((candidate) => {
@@ -141,10 +173,13 @@ function dedupeCandidates(list) {
 }
 //#endregion
 //#region lib/types/coordinator.js
-/** Coordinate candidate submission with recorded keys and per-instance in-flight protection. */
-/** Create a coordinator over the three injected seams. */
+/**
+* Create a coordinator over the downloader and submission store.
+* @param deps - Downloader and accepted-submission store; failures propagate to callers.
+* @returns A coordinator that records successful submissions and prevents duplicate in-flight work within this instance.
+*/
 function createDownloadCoordinator(deps) {
-	const { source, downloader, store } = deps;
+	const { downloader, store } = deps;
 	const inFlight = /* @__PURE__ */ new Map();
 	async function submit(candidate) {
 		if (!candidate.submittable) return { unsubmittable: true };
@@ -164,32 +199,13 @@ function createDownloadCoordinator(deps) {
 			inFlight.delete(key);
 		}
 	}
-	async function refresh() {
-		const candidates = dedupeCandidates(await source.listCandidates());
-		let added = 0;
-		let skipped = 0;
-		let unsubmittable = 0;
-		for (const candidate of candidates) {
-			const result = await submit(candidate);
-			if ("gid" in result) added++;
-			else if ("unsubmittable" in result) unsubmittable++;
-			else skipped++;
-		}
-		return {
-			discovered: candidates.length,
-			added,
-			skipped,
-			unsubmittable
-		};
-	}
-	return {
-		refresh,
-		submit
-	};
+	return { submit };
 }
 //#endregion
 //#region lib/types/service.js
+/** The requested identifier is absent from the candidate set available to the service. */
 var UnknownCandidateError = class extends Error {
+	/** Requested identifier that could not be resolved for submission. */
 	candidateId;
 	constructor(candidateId) {
 		super(`Unknown candidate: ${candidateId}`);
@@ -197,18 +213,23 @@ var UnknownCandidateError = class extends Error {
 		this.candidateId = candidateId;
 	}
 };
-/** Create the service over the three injected seams. */
+/**
+* Create the service over the three injected seams.
+* @param deps - Discovery, optional keyword-scoped discovery, downloader, and submission storage providers.
+* @returns A service with a private candidate cache; unknown submission identifiers reject with UnknownCandidateError.
+*/
 function createDownloadService(deps) {
 	const coordinator = createDownloadCoordinator(deps);
+	let source = deps.source;
 	let cache;
 	async function discover() {
-		cache = dedupeCandidates(await deps.source.listCandidates());
+		cache = dedupeCandidates(await source.listCandidates());
 		return cache;
 	}
 	return {
 		async search(keyword) {
-			cache = dedupeCandidates(await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates());
-			return cache;
+			source = deps.makeSource ? deps.makeSource(keyword) : deps.source;
+			return discover();
 		},
 		async listCandidates() {
 			return cache ?? discover();
@@ -222,9 +243,13 @@ function createDownloadService(deps) {
 			return deps.downloader.status(gid);
 		},
 		async refresh() {
-			const result = await coordinator.refresh();
-			await discover();
-			return result;
+			const candidates = await discover();
+			return {
+				candidates,
+				discovered: candidates.length,
+				known: candidates.filter((candidate) => deps.store.has(candidate.dedupeKey)).length,
+				unsubmittable: candidates.filter((candidate) => !candidate.submittable).length
+			};
 		}
 	};
 }
@@ -5268,7 +5293,9 @@ function mergeOptions(defaults, options) {
 }
 //#endregion
 //#region lib/types/rss.js
+/** Feed XML is malformed or lacks a recognized RSS, RDF, or Atom container. */
 var RssParseError = class extends Error {
+	/** Distinguishes invalid XML syntax from a missing feed container. */
 	code;
 	constructor(code, options) {
 		super(code, options);
@@ -5340,6 +5367,12 @@ function candidate(item, sourceId) {
 		dedupeKey
 	};
 }
+/**
+* Parse RSS, RDF, or Atom entries, omitting entries without a source URL and rejecting invalid feeds.
+* @param xml - Feed XML to validate and parse.
+* @param options - Source identifier used to namespace candidate identifiers.
+* @returns Normalized candidates with the first entry retained for each deduplication key.
+*/
 function parseRssFeed(xml, options) {
 	try {
 		SyntaxValidator.validate(xml);
@@ -5367,6 +5400,7 @@ function parseRssFeed(xml, options) {
 //#region lib/types/source.js
 /** A feed that could not be retrieved. */
 var FeedFetchError = class extends Error {
+	/** HTTP status returned by the failed feed request. */
 	status;
 	constructor(status) {
 		super(`Feed request failed with status ${status}`);
@@ -5405,7 +5439,11 @@ function createRssSource(options) {
 }
 //#endregion
 //#region lib/types/store.js
-/** Hydrate from the backend, then persist after each accepted record. */
+/**
+* Hydrate from the backend, then persist after each accepted record.
+* @param backend - Loads initial records and saves complete snapshots; load failures reject creation.
+* @returns A hydrated store whose flush rejects with the first save failure in each drained batch.
+*/
 async function createPersistentSubmitStore(backend) {
 	const records = new Map((await backend.load()).map((record) => [record.key, { ...record }]));
 	let queue = Promise.resolve();
@@ -5439,7 +5477,11 @@ async function createPersistentSubmitStore(backend) {
 }
 //#endregion
 //#region lib/types/store-json.js
-/** Backend storing submit records as a JSON document at `path`. */
+/**
+* Backend storing submit records as a JSON document at `path`.
+* @param path - Destination file; missing files load as empty, while malformed contents reject.
+* @returns A backend that replaces the file through a temporary file and applies owner-only permissions.
+*/
 function createJsonFileSubmitStoreBackend(path) {
 	return {
 		async load() {
@@ -5609,13 +5651,10 @@ let DownloadRemote = (() => {
 			});
 		}
 		static inject = ["typert", "credentials"];
-		static Config = z.object({
-			endpoint: z.string().default("http://10.0.0.7:8082/jsonrpc"),
-			tokenRef: z.string().default("ARIA2_TOKEN"),
-			timeoutMs: z.number().min(1).default(15e3),
-			storePath: z.string().default("downloader/submissions.json"),
-			feedUrl: z.string().default("https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2")
-		});
+		/** Mount schema shared with the plugin entry. */
+		static get Config() {
+			return Config;
+		}
 		/** The service the tools and the Remote methods share. */
 		service = __runInitializers(this, _instanceExtraInitializers);
 		constructor(ctx, config) {
@@ -5663,18 +5702,41 @@ let DownloadRemote = (() => {
 				refresh: async () => (await ready).refresh()
 			};
 		}
+		/**
+		* Search candidates through the service for one keyword.
+		* @param keyword - text matched against candidate titles.
+		* @returns the matching candidates after deduplication.
+		*/
 		search(keyword) {
 			return this.service.search(keyword);
 		}
+		/**
+		* List the cached candidates, discovering them on first use.
+		* @returns the current candidate set.
+		*/
 		list() {
 			return this.service.listCandidates();
 		}
+		/**
+		* Submit one cached candidate to aria2.
+		* @param candidateId - identifier from the current candidate set.
+		* @returns the submission outcome, GID, timestamp, and call ID.
+		*/
 		add(candidateId) {
 			return this.service.add(candidateId);
 		}
+		/**
+		* Read the state of one aria2 download.
+		* @param gid - aria2 download identifier returned by a submission.
+		* @returns the aria2-reported state for that GID.
+		*/
 		status(gid) {
 			return this.service.status(gid);
 		}
+		/**
+		* Rediscover the last executed query without submitting downloads.
+		* @returns the candidates and discovery counts; source failure preserves the previous cache.
+		*/
 		refresh() {
 			return this.service.refresh();
 		}
@@ -5682,7 +5744,12 @@ let DownloadRemote = (() => {
 })();
 //#endregion
 //#region lib/types/tools.js
-/** Build the three model tools over a service instance. */
+/**
+* Build the three model tools over a service instance.
+* @param service - Candidate discovery, submission, and status operations invoked by the tools.
+* @param options - Clock used to timestamp submission attempts before calling the service.
+* @returns Unregistered search, add, and status tool definitions; service failures propagate to their callers.
+*/
 function createDownloadTools(service, options) {
 	return [
 		defineTool({
@@ -5852,14 +5919,19 @@ function createDownloadTools(service, options) {
 }
 //#endregion
 //#region lib/types/index.js
-const Config = DownloadRemote.Config;
+/** Loader plugin name. */
 const name = "dsh-downloader";
+/** Host services required by the plugin. */
 const inject = [
 	"tools",
 	"credentials",
 	"typert"
 ];
-/** Register the shared Remote service and tools in the owning host scope. */
+/**
+* Register the shared Remote service and tools in the owning host scope.
+* @param ctx - Host scope providing tools, credentials, and Typert.
+* @param config - Resolved downloader settings.
+*/
 function apply(ctx, config) {
 	const remote = new DownloadRemote(ctx, config);
 	for (const tool of createDownloadTools(remote.service, { clock: () => /* @__PURE__ */ new Date() })) ctx.effect(() => ctx.tools.register(tool));

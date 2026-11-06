@@ -91,17 +91,93 @@ describe('DownloadService', () => {
     expect(list).toHaveBeenCalledTimes(2)
   })
 
-  it('B3 refresh shares submission records and replaces the cache with a second discovery', async () => {
+  it('B1/B2 refresh deduplicates discoveries without submissions and requests the source once each time', async () => {
     const first = candidate('first')
+    const second = candidate('second')
+    const { service, list, add, store } = setup([first, second, { ...first, id: 'duplicate' }])
+    for (let count = 1; count <= 2; count++) {
+      expect(await service.refresh()).toEqual({ candidates: [first, second], discovered: 2, known: 0, unsubmittable: 0 })
+      expect(await service.listCandidates()).toEqual([first, second])
+      expect(list).toHaveBeenCalledTimes(count)
+      expect(add).not.toHaveBeenCalled()
+      expect(store.list()).toEqual([])
+    }
+  })
+
+  it('B1 refresh returns zero counts for an empty source', async () => {
+    const { service, add } = setup()
+    expect(await service.refresh()).toEqual({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 })
+    expect(add).not.toHaveBeenCalled()
+  })
+
+  it('B3 refresh preserves recorded gids and counts mixed candidates without submitting', async () => {
+    const entries = [candidate('new'), candidate('recorded'), candidate('blocked', false)]
+    const { service, list, add, store } = setup([...entries, entries[0]!])
+    store.record('recorded', 'existing-gid')
+    store.record('unrelated', 'other-gid')
+    const records = store.list()
+    expect(await service.refresh()).toEqual({ candidates: entries, discovered: 3, known: 1, unsubmittable: 1 })
+    expect(await service.listCandidates()).toEqual(entries)
+    expect(await service.add('recorded')).toEqual({ alreadySubmitted: 'existing-gid' })
+    expect(list).toHaveBeenCalledOnce()
+    expect(add).not.toHaveBeenCalled()
+    expect(store.list()).toEqual(records)
+  })
+
+  it('B4 direct refresh reuses the last executed search source', async () => {
+    const { service, deps, list, add } = setup()
+    const entry = candidate('alpha')
+    const scoped = vi.fn(async () => [entry])
+    deps.makeSource = vi.fn(() => ({ listCandidates: scoped }))
+    await service.search('alpha')
+    expect(await service.refresh()).toEqual({ candidates: [entry], discovered: 1, known: 0, unsubmittable: 0 })
+    expect(deps.makeSource).toHaveBeenCalledWith('alpha')
+    expect(scoped).toHaveBeenCalledTimes(2)
+    expect(list).not.toHaveBeenCalled()
+    expect(add).not.toHaveBeenCalled()
+  })
+
+  it.each(['timeout', 'HTTP error', 'parse failure'])('B5 preserves cache and records on %s and permits retry', async message => {
+    const previous = candidate('previous')
     const next = candidate('next')
-    const { service, list, add } = setup([first])
-    await service.add('first')
-    list.mockResolvedValueOnce([first, candidate('new'), candidate('blocked', false)])
-      .mockResolvedValueOnce([next, next])
-    expect(await service.refresh()).toEqual({ discovered: 3, added: 1, skipped: 1, unsubmittable: 1 })
-    expect(await service.listCandidates()).toEqual([next])
+    const { service, list, add, store } = setup([previous])
+    await service.listCandidates()
+    store.record('previous', 'existing')
+    const records = store.list()
+    const error = new Error(message)
+    list.mockRejectedValueOnce(error).mockResolvedValueOnce([next])
+    await expect(service.refresh()).rejects.toBe(error)
+    expect(await service.listCandidates()).toEqual([previous])
+    expect(store.list()).toEqual(records)
+    expect(await service.refresh()).toEqual({ candidates: [next], discovered: 1, known: 0, unsubmittable: 0 })
     expect(list).toHaveBeenCalledTimes(3)
-    expect(add).toHaveBeenCalledTimes(2)
+    expect(store.list()).toEqual(records)
+    expect(add).not.toHaveBeenCalled()
+  })
+
+  it('B6 refresh then manual submission adds only the selected row once', async () => {
+    const selected = candidate('selected')
+    const { service, add, store } = setup([selected, candidate('other')])
+    await service.refresh()
+    expect(add).not.toHaveBeenCalled()
+    expect(await service.add('selected')).toEqual({ gid: 'download' })
+    expect(await service.add('selected')).toEqual({ alreadySubmitted: 'download' })
+    expect(add.mock.calls).toEqual([[selected]])
+    expect(store.list()).toEqual([{ key: 'selected', gid: 'download' }])
+  })
+
+  it('refresh during a manual submission neither submits nor records pending work', async () => {
+    const entry = candidate('pending')
+    const { service, add, store } = setup([entry])
+    await service.listCandidates()
+    const gate = Promise.withResolvers<{ gid: string }>()
+    add.mockReturnValueOnce(gate.promise)
+    const pending = service.add(entry.id)
+    expect(await service.refresh()).toEqual({ candidates: [entry], discovered: 1, known: 0, unsubmittable: 0 })
+    expect(add).toHaveBeenCalledOnce()
+    expect(store.list()).toEqual([])
+    gate.resolve({ gid: 'manual' })
+    await pending
   })
 
   it('B6 passes status through unchanged', async () => {

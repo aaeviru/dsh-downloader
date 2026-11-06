@@ -1,4 +1,8 @@
-/** Hydrate from the backend, then persist after each accepted record. */
+/**
+ * Hydrate from the backend, then persist after each accepted record.
+ * @param backend - Loads initial records and saves complete snapshots; load failures reject creation.
+ * @returns A hydrated store whose flush rejects with the first save failure in each drained batch.
+ */
 export async function createPersistentSubmitStore(backend) {
     const records = new Map((await backend.load()).map(record => [record.key, { ...record }]));
     let queue = Promise.resolve();

@@ -1,9 +1,10 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import z from '@deepseek-ai/schemastery'
+import type Schema from '@deepseek-ai/schemastery'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { Config } from './config.ts'
 import { createAria2Client } from './aria2.ts'
 import { createDownloadService } from './service.ts'
 import { createRssSource } from './source.ts'
@@ -11,6 +12,8 @@ import type { DownloadService } from './service.ts'
 import type { Candidate, RefreshResult, SubmitResult } from './types.ts'
 import { createPersistentSubmitStore } from './store.ts'
 import { createJsonFileSubmitStoreBackend } from './store-json.ts'
+
+export type { Config } from './config.ts'
 
 /**
  * Resolve the submission store path.
@@ -22,24 +25,13 @@ export function resolveStorePath(storePath: string, env: NodeJS.ProcessEnv = pro
   return resolve(env.DSH_HOME ?? join(homedir(), '.dsh'), storePath)
 }
 
-export interface Config {
-  endpoint: string
-  tokenRef: string
-  timeoutMs: number
-  storePath: string
-  feedUrl: string
-}
-
 /** Own the download service and its browser namespace. */
 export class DownloadRemote extends TypertRemoteService {
   static inject = ['typert', 'credentials']
-  static Config: z<Config> = z.object({
-    endpoint: z.string().default('http://10.0.0.7:8082/jsonrpc'),
-    tokenRef: z.string().default('ARIA2_TOKEN'),
-    timeoutMs: z.number().min(1).default(15000),
-    storePath: z.string().default('downloader/submissions.json'),
-    feedUrl: z.string().default('https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2'),
-  })
+  /** Mount schema shared with the plugin entry. */
+  static get Config(): Schema<Partial<Config>, Config> {
+    return Config
+  }
 
   /** The service the tools and the Remote methods share. */
   readonly service: DownloadService
@@ -86,26 +78,49 @@ export class DownloadRemote extends TypertRemoteService {
     }
   }
 
+  /**
+   * Search candidates through the service for one keyword.
+   * @param keyword - text matched against candidate titles.
+   * @returns the matching candidates after deduplication.
+   */
   @Remote('search')
   search(keyword: string): Promise<readonly Candidate[]> {
     return this.service.search(keyword)
   }
 
+  /**
+   * List the cached candidates, discovering them on first use.
+   * @returns the current candidate set.
+   */
   @Remote('list')
   list(): Promise<readonly Candidate[]> {
     return this.service.listCandidates()
   }
 
+  /**
+   * Submit one cached candidate to aria2.
+   * @param candidateId - identifier from the current candidate set.
+   * @returns the submission outcome, GID, timestamp, and call ID.
+   */
   @Remote('add')
   add(candidateId: string): Promise<SubmitResult> {
     return this.service.add(candidateId)
   }
 
+  /**
+   * Read the state of one aria2 download.
+   * @param gid - aria2 download identifier returned by a submission.
+   * @returns the aria2-reported state for that GID.
+   */
   @Remote('status')
   status(gid: string): Promise<{ state: string }> {
     return this.service.status(gid)
   }
 
+  /**
+   * Rediscover the last executed query without submitting downloads.
+   * @returns the candidates and discovery counts; source failure preserves the previous cache.
+   */
   @Remote('refresh')
   refresh(): Promise<RefreshResult> {
     return this.service.refresh()

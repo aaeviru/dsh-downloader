@@ -1,6 +1,8 @@
 import { dedupeCandidates } from "./candidate.js";
 import { createDownloadCoordinator } from "./coordinator.js";
+/** The requested identifier is absent from the candidate set available to the service. */
 export class UnknownCandidateError extends Error {
+    /** Requested identifier that could not be resolved for submission. */
     candidateId;
     constructor(candidateId) {
         super(`Unknown candidate: ${candidateId}`);
@@ -8,19 +10,23 @@ export class UnknownCandidateError extends Error {
         this.candidateId = candidateId;
     }
 }
-/** Create the service over the three injected seams. */
+/**
+ * Create the service over the three injected seams.
+ * @param deps - Discovery, optional keyword-scoped discovery, downloader, and submission storage providers.
+ * @returns A service with a private candidate cache; unknown submission identifiers reject with UnknownCandidateError.
+ */
 export function createDownloadService(deps) {
     const coordinator = createDownloadCoordinator(deps);
+    let source = deps.source;
     let cache;
     async function discover() {
-        cache = dedupeCandidates(await deps.source.listCandidates());
+        cache = dedupeCandidates(await source.listCandidates());
         return cache;
     }
     return {
         async search(keyword) {
-            const candidates = await (deps.makeSource ?? (() => deps.source))(keyword).listCandidates();
-            cache = dedupeCandidates(candidates);
-            return cache;
+            source = deps.makeSource ? deps.makeSource(keyword) : deps.source;
+            return discover();
         },
         async listCandidates() {
             return cache ?? discover();
@@ -36,9 +42,13 @@ export function createDownloadService(deps) {
             return deps.downloader.status(gid);
         },
         async refresh() {
-            const result = await coordinator.refresh();
-            await discover();
-            return result;
+            const candidates = await discover();
+            return {
+                candidates,
+                discovered: candidates.length,
+                known: candidates.filter(candidate => deps.store.has(candidate.dedupeKey)).length,
+                unsubmittable: candidates.filter(candidate => !candidate.submittable).length,
+            };
         },
     };
 }

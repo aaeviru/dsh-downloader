@@ -2,6 +2,7 @@ import { dedupeCandidates } from "./candidate.js";
 import { parseRssFeed } from "./rss.js";
 /** A feed that could not be retrieved. */
 export class FeedFetchError extends Error {
+    /** HTTP status returned by the failed feed request. */
     status;
     constructor(status) {
         super(`Feed request failed with status ${status}`);

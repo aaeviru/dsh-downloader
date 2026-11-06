@@ -8,7 +8,11 @@ import { DownloaderPanel } from './DownloaderPanel.tsx'
 import { DownloaderIcon } from './DownloaderIcon.tsx'
 import { NS, en, zh } from './locales.ts'
 
-/** Register localized downloader seats with context-owned cleanup. */
+/**
+ * Register localized downloader seats with context-owned cleanup.
+ * @param ctx - Client context owning the locale dictionaries and slot registrations.
+ * @param download - Download operations injected into the downloader panel.
+ */
 export function mountDownloader(ctx: Context, download: DownloadNamespace): void {
   ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'dsh-downloader: dictionaries')
   const t = ctx.locale.bind(NS)

@@ -1,52 +1,52 @@
 /** Coordinate candidate submission with recorded keys and per-instance in-flight protection. */
-import { dedupeCandidates } from './candidate.ts'
 import type { Candidate } from './candidate.ts'
 
+/** Discovers candidates; retrieval failures reject the listing operation. */
 export interface Source {
   listCandidates(): Promise<readonly Candidate[]>
 }
 
+/** Submits candidates and queries remote state; successful submission returns the remote download identifier. */
 export interface Downloader {
   add(candidate: Candidate): Promise<{ gid: string }>
   status(gid: string): Promise<{ state: string }>
 }
 
+/** Associates a deduplication key with the remote identifier of an accepted submission. */
 export interface SubmitRecord {
   readonly key: string
   readonly gid: string
 }
 
+/** Tracks accepted submissions; every key reported by has must have a matching record in list. */
 export interface SubmitStore {
   has(key: string): boolean
   record(key: string, gid: string): void
   list(): readonly SubmitRecord[]
 }
 
-export interface RefreshResult {
-  readonly discovered: number
-  readonly added: number
-  readonly skipped: number
-  readonly unsubmittable: number
-}
-
+/** Distinguishes a new acceptance from a recorded, pending, or unsupported submission without treating skips as failures. */
 export type SubmitResult =
   | { readonly gid: string }
   | { readonly alreadySubmitted: string }
   | { readonly alreadySubmitting: true }
   | { readonly unsubmittable: true }
 
+/** Suppresses recorded and per-instance pending duplicates. */
 export interface DownloadCoordinator {
-  refresh(): Promise<RefreshResult>
   submit(candidate: Candidate): Promise<SubmitResult>
 }
 
-/** Create a coordinator over the three injected seams. */
+/**
+ * Create a coordinator over the downloader and submission store.
+ * @param deps - Downloader and accepted-submission store; failures propagate to callers.
+ * @returns A coordinator that records successful submissions and prevents duplicate in-flight work within this instance.
+ */
 export function createDownloadCoordinator(deps: {
-  readonly source: Source
   readonly downloader: Downloader
   readonly store: SubmitStore
 }): DownloadCoordinator {
-  const { source, downloader, store } = deps
+  const { downloader, store } = deps
   const inFlight = new Map<string, true>()
 
   async function submit(candidate: Candidate): Promise<SubmitResult> {
@@ -68,19 +68,5 @@ export function createDownloadCoordinator(deps: {
     }
   }
 
-  async function refresh(): Promise<RefreshResult> {
-    const candidates = dedupeCandidates(await source.listCandidates())
-    let added = 0
-    let skipped = 0
-    let unsubmittable = 0
-    for (const candidate of candidates) {
-      const result = await submit(candidate)
-      if ('gid' in result) added++
-      else if ('unsubmittable' in result) unsubmittable++
-      else skipped++
-    }
-    return { discovered: candidates.length, added, skipped, unsubmittable }
-  }
-
-  return { refresh, submit }
+  return { submit }
 }

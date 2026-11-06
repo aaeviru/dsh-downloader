@@ -18,7 +18,7 @@ it('registers the download namespace and delegates every method to the shared se
     listCandidates: vi.fn(async () => []),
     add: vi.fn(async (_id: string) => ({ gid: 'gid' })),
     status: vi.fn(async (_gid: string) => ({ state: 'active' })),
-    refresh: vi.fn(async () => ({ discovered: 0, added: 0, skipped: 0, unsubmittable: 0 })),
+    refresh: vi.fn(async () => ({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 })),
   }
   const shared = service
   vi.mocked(createDownloadService).mockReturnValue(shared)
@@ -30,20 +30,22 @@ it('registers the download namespace and delegates every method to the shared se
       effects.push(Promise.resolve(callback()))
     },
   }
-  const remote = new DownloadRemote(ctx as Context, DownloadRemote.Config({}))
+  const remote = new DownloadRemote(ctx as unknown as Context, DownloadRemote.Config({}))
   expect(DownloadRemote.inject).toEqual(['typert', 'credentials'])
   expect(provide).toHaveBeenCalledWith('download', remote, undefined)
   expect(remote.typertRemote.namespace).toBe('download')
   expect(await remote.search('term')).toEqual([])
   expect(await remote.list()).toEqual([])
+  expect(await remote.refresh()).toEqual({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 })
+  expect(await remote.refresh()).toEqual({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 })
+  expect(shared.add).not.toHaveBeenCalled()
   expect(await remote.add('candidate')).toEqual({ gid: 'gid' })
   expect(await remote.status('gid')).toEqual({ state: 'active' })
-  expect(await remote.refresh()).toEqual(await shared.refresh.mock.results[0]!.value)
   expect(shared.search).toHaveBeenCalledWith('term')
   expect(shared.listCandidates).toHaveBeenCalledOnce()
   expect(shared.add).toHaveBeenCalledWith('candidate')
   expect(shared.status).toHaveBeenCalledWith('gid')
-  expect(shared.refresh).toHaveBeenCalledOnce()
+  expect(shared.refresh).toHaveBeenCalledTimes(2)
   for (const effect of effects) await (await effect)()
   expect(flush).toHaveBeenCalledOnce()
 })
@@ -52,7 +54,7 @@ it('hands the service a keyword-scoped source factory', async () => {
   vi.mocked(createPersistentSubmitStore).mockResolvedValue({ has: () => false, list: () => [], record: () => {}, flush: async () => {} })
   vi.mocked(createDownloadService).mockReturnValue({
     search: async () => [], listCandidates: async () => [], add: async () => ({ gid: 'g' }),
-    status: async () => ({ state: 'active' }), refresh: async () => ({ discovered: 0, added: 0, skipped: 0, unsubmittable: 0 }),
+    status: async () => ({ state: 'active' }), refresh: async () => ({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 }),
   })
   const effects: Promise<unknown>[] = []
   const ctx = {

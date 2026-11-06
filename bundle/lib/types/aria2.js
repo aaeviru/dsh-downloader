@@ -1,11 +1,17 @@
+/** Base failure type for aria2 calls, including authentication, deadline, and protocol failures. */
 export class Aria2Error extends Error {
 }
+/** JSON-RPC error code 1 returned by aria2; the message identifies the method with the token removed. */
 export class Aria2AuthError extends Aria2Error {
 }
+/** The call deadline expired; cancellation does not establish whether aria2 accepted the operation. */
 export class Aria2TimeoutError extends Aria2Error {
 }
+/** Transport, HTTP, or response-validation failure with token-redacted response diagnostics. */
 export class Aria2ProtocolError extends Aria2Error {
+    /** HTTP status, or zero when no response was received. */
     status;
+    /** Response text with the configured token removed, truncated to 200 UTF-8 bytes before decoding. */
     bodyPreview;
     constructor(message, status, bodyPreview) {
         super(message);
@@ -34,7 +40,12 @@ function length(value) {
 const fetchTransport = request => fetch(request.url, {
     method: 'POST', headers: request.headers, body: request.body, signal: request.signal,
 });
-/** Create a client. `transport` defaults to a thin wrapper over global fetch. */
+/**
+ * Create a client. `transport` defaults to a thin wrapper over global fetch.
+ * @param config - Endpoint, authentication token, and deadline covering transport and response parsing.
+ * @param transport - Sends each JSON-RPC request, using its signal for cancellation.
+ * @returns A client that validates responses and reports authentication, timeout, or protocol failures.
+ */
 export function createAria2Client(config, transport = fetchTransport) {
     const { endpoint, timeoutMs } = config;
     const token = config.token === '' ? null : config.token;

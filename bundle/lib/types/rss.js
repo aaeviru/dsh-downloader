@@ -1,7 +1,9 @@
 import { XMLParser } from 'fast-xml-parser';
 import { SyntaxValidator } from 'fast-xml-validator';
 import { dedupeCandidates, normalizeInfoHash } from "./candidate.js";
+/** Feed XML is malformed or lacks a recognized RSS, RDF, or Atom container. */
 export class RssParseError extends Error {
+    /** Distinguishes invalid XML syntax from a missing feed container. */
     code;
     constructor(code, options) {
         super(code, options);
@@ -77,6 +79,12 @@ function candidate(item, sourceId) {
         dedupeKey,
     };
 }
+/**
+ * Parse RSS, RDF, or Atom entries, omitting entries without a source URL and rejecting invalid feeds.
+ * @param xml - Feed XML to validate and parse.
+ * @param options - Source identifier used to namespace candidate identifiers.
+ * @returns Normalized candidates with the first entry retained for each deduplication key.
+ */
 export function parseRssFeed(xml, options) {
     try {
         SyntaxValidator.validate(xml);

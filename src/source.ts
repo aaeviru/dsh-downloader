@@ -15,6 +15,7 @@ export type FeedTransport = (url: string, signal: AbortSignal) => Promise<FeedRe
 
 /** A feed that could not be retrieved. */
 export class FeedFetchError extends Error {
+  /** HTTP status returned by the failed feed request. */
   readonly status: number
 
   constructor(status: number) {
@@ -24,6 +25,7 @@ export class FeedFetchError extends Error {
   }
 }
 
+/** Feed address and request deadline with optional search and transport overrides. */
 export interface RssSourceOptions {
   readonly feedUrl: string
   /** Feed search term; omitted keeps the address as configured. */

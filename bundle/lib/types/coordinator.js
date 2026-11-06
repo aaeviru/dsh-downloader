@@ -1,8 +1,10 @@
-/** Coordinate candidate submission with recorded keys and per-instance in-flight protection. */
-import { dedupeCandidates } from "./candidate.js";
-/** Create a coordinator over the three injected seams. */
+/**
+ * Create a coordinator over the downloader and submission store.
+ * @param deps - Downloader and accepted-submission store; failures propagate to callers.
+ * @returns A coordinator that records successful submissions and prevents duplicate in-flight work within this instance.
+ */
 export function createDownloadCoordinator(deps) {
-    const { source, downloader, store } = deps;
+    const { downloader, store } = deps;
     const inFlight = new Map();
     async function submit(candidate) {
         if (!candidate.submittable)
@@ -26,22 +28,6 @@ export function createDownloadCoordinator(deps) {
             inFlight.delete(key);
         }
     }
-    async function refresh() {
-        const candidates = dedupeCandidates(await source.listCandidates());
-        let added = 0;
-        let skipped = 0;
-        let unsubmittable = 0;
-        for (const candidate of candidates) {
-            const result = await submit(candidate);
-            if ('gid' in result)
-                added++;
-            else if ('unsubmittable' in result)
-                unsubmittable++;
-            else
-                skipped++;
-        }
-        return { discovered: candidates.length, added, skipped, unsubmittable };
-    }
-    return { refresh, submit };
+    return { submit };
 }
 //# sourceMappingURL=coordinator.js.map

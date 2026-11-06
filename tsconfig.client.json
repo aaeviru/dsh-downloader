@@ -9,7 +9,8 @@
     "src/client",
     "src/types.ts",
     "src/candidate.ts",
-    "src/coordinator.ts"
+    "src/coordinator.ts",
+    "src/service.ts"
   ],
   "references": [
     {

@@ -1,3 +1,8 @@
+/**
+ * Create a delayed periodic runner that skips ticks while a previous run remains active.
+ * @param deps - Interval, asynchronous work, timer provider, and an error callback that must not throw.
+ * @returns An initially stopped poller; run failures reach onError without stopping future ticks.
+ */
 export function createPoller(deps) {
     let running = false;
     let executing = false;

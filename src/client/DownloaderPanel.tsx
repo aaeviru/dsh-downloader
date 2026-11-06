@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Candidate } from '../types.ts'
 import type { DownloaderKey } from './locales.ts'
 import type { DownloadNamespace, SubmitResult } from './namespace.ts'
 
 type Translate = (key: DownloaderKey) => string
-type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; candidates: readonly Candidate[] }
+type State = { kind: 'loading' | 'error' | 'ready' }
 
 /** Render a publication instant as a Japan-time calendar date. */
 function formatPublished(publishedAt: string | null): string {
@@ -91,17 +91,26 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({ key: 'published', descending: true })
   const [keyword, setKeyword] = useState('')
+  const lastExecutedKeyword = useRef<string | undefined>(undefined)
+  const [candidates, setCandidates] = useState<readonly Candidate[]>([])
   const [page, setPage] = useState(1)
   const pageSize = 20
   const load = useCallback(async (refresh: boolean) => {
     setState({ kind: 'loading' })
     try {
-      if (refresh) {
+      if (refresh && lastExecutedKeyword.current === undefined) {
         const result = await download.refresh()
         if (!result.ok) { setState({ kind: 'error' }); return }
+        setCandidates(result.value.candidates)
+        setState({ kind: 'ready' })
+      } else {
+        const result = refresh
+          ? await download.search(lastExecutedKeyword.current!)
+          : await download.list()
+        if (result.ok) setCandidates(result.value)
+        setState(result.ok ? { kind: 'ready' } : { kind: 'error' })
       }
-      const result = await download.list()
-      setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
+      setPage(1)
     } catch {
       setState({ kind: 'error' })
     }
@@ -110,14 +119,16 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   const runSearch = useCallback(async () => {
     setState({ kind: 'loading' })
     setPage(1)
+    lastExecutedKeyword.current = keyword
     try {
       const result = await download.search(keyword)
-      setState(result.ok ? { kind: 'ready', candidates: result.value } : { kind: 'error' })
+      if (result.ok) setCandidates(result.value)
+      setState(result.ok ? { kind: 'ready' } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
     }
   }, [download, keyword])
-  const ordered = state.kind === 'ready' ? order(state.candidates, sort) : []
+  const ordered = order(candidates, sort)
   const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize))
   const visible = ordered.slice((page - 1) * pageSize, page * pageSize)
   return (
@@ -137,8 +148,8 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
         <button type="button" disabled={state.kind === 'loading'} onClick={() => { void load(true) }}>{t('refresh')}</button>
       </div>
       {state.kind === 'loading' && <p role="status">{t('loading')}</p>}
-      {state.kind === 'error' && <div role="alert"><p>{t('error')}</p><button type="button" onClick={() => { void load(false) }}>{t('retry')}</button></div>}
-      {state.kind === 'ready' && (state.candidates.length === 0 ? <p>{t('empty')}</p> : (
+      {state.kind === 'error' && <div role="alert"><p>{t('error')}</p><button type="button" onClick={() => { void load(true) }}>{t('retry')}</button></div>}
+      {(state.kind === 'ready' || candidates.length > 0) && (candidates.length === 0 ? <p>{t('empty')}</p> : (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 70px 70px 70px', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--dsw-alias-border-l2)', fontSize: 12 }}>
             {(['title', 'size', 'published', 'seeders', 'downloads'] as const).map(key => (

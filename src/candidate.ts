@@ -1,3 +1,4 @@
+/** Feed entry with nullable metadata and a deduplication key shared by equivalent download targets. */
 export interface Candidate {
   readonly id: string
   readonly sourceId: string
@@ -18,6 +19,11 @@ export interface Candidate {
   readonly dedupeKey: string
 }
 
+/**
+ * Normalize a hexadecimal or base32 BitTorrent info hash.
+ * @param raw - A 40-digit hexadecimal or 32-character base32 hash, without surrounding whitespace.
+ * @returns The lowercase hexadecimal hash, or null for absent or invalid input.
+ */
 export function normalizeInfoHash(raw: string | null | undefined): string | null {
   if (typeof raw !== 'string') return null
   if (/^[a-f0-9]{40}$/i.test(raw)) return raw.toLowerCase()
@@ -31,6 +37,11 @@ export function normalizeInfoHash(raw: string | null | undefined): string | null
   return hex
 }
 
+/**
+ * Retain the first candidate for each deduplication key without mutating the input.
+ * @param list - Candidates in preferred retention order.
+ * @returns A new array retaining original candidate objects and their relative order.
+ */
 export function dedupeCandidates(list: readonly Candidate[]): readonly Candidate[] {
   const seen = new Set<string>()
   return list.filter((candidate) => {
