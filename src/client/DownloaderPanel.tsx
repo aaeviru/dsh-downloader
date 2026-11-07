@@ -46,40 +46,61 @@ function outcome(result: SubmitResult, t: Translate): string {
 }
 
 /** A candidate owns its pending state and visible submission outcome. */
-function CandidateRow({ candidate, t, download }: { candidate: Candidate; t: Translate; download: DownloadNamespace }) {
+function CandidateRow({ candidate, t, download, gid, selected, select, refreshSubmissions }: {
+  candidate: Candidate; t: Translate; download: DownloadNamespace; gid: string | undefined
+  selected: boolean; select: () => void; refreshSubmissions: () => Promise<void>
+}) {
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState('')
   const published = formatPublished(candidate.publishedAt)
-  async function submit() {
+  async function submit(resubmit = false) {
     setPending(true)
     try {
-      const result = await download.add(candidate.id)
+      const result = await (resubmit ? download.resubmit(candidate.id) : download.add(candidate.id))
       setMessage(result.ok ? outcome(result.value, t) : t('submitError'))
+      if (result.ok && ('gid' in result.value || 'alreadySubmitted' in result.value)) {
+        await refreshSubmissions()
+        setMessage('')
+      }
     } catch {
       setMessage(t('submitError'))
     } finally {
       setPending(false)
     }
   }
+  function activate() {
+    if (pending) return
+    select()
+    if (gid === undefined && candidate.submittable) void submit()
+  }
   const columns = '1fr 120px 70px 70px 70px'
   return (
-    <li>
-      <button
-        type="button"
-        disabled={!candidate.submittable || pending}
-        onClick={() => { void submit() }}
+    <li data-submitted={gid !== undefined} style={{ background: gid !== undefined ? 'var(--dsw-alias-state-success-tertiary)' : 'none' }}>
+      <div
+        onClick={activate}
         style={{
           display: 'grid', gridTemplateColumns: columns, gap: 8, width: '100%',
-          textAlign: 'left', background: 'none', border: 'none', cursor: candidate.submittable ? 'pointer' : 'not-allowed',
+          textAlign: 'left', cursor: candidate.submittable ? 'pointer' : 'not-allowed',
           padding: '8px 4px', borderBottom: '1px solid var(--dsw-alias-border-l2)', color: 'inherit',
         }}
       >
-        <span>{candidate.title}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button type="button" disabled={pending || (gid === undefined && !candidate.submittable)}
+            style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textAlign: 'left', cursor: 'inherit' }}>
+            <span>{candidate.title}</span>
+          </button>
+          {selected && gid !== undefined && <button type="button" aria-label={t('resubmit')}
+            disabled={pending || !candidate.submittable}
+            onClick={event => { event.stopPropagation(); void submit(true) }}>
+            <span aria-hidden="true">↻</span>
+          </button>}
+        </span>
         <span style={{ color: 'var(--dsw-alias-label-secondary)' }}>{candidate.sizeBytes === null ? t('unknownSize') : new Intl.NumberFormat(undefined, { style: 'unit', unit: 'byte' }).format(candidate.sizeBytes)}</span>
         <span style={{ color: 'var(--dsw-alias-label-secondary)' }}>{published}</span>
         <span>{candidate.seeders ?? '—'}</span>
         <span>{candidate.downloads ?? '—'}</span>
-      </button>
+      </div>
+      {gid !== undefined && <p role="status">{t('submitted').replace('{gid}', gid)}</p>}
       {!candidate.submittable && <p>{t('unsubmittable')}</p>}
       {message !== '' && <p role="status">{message}</p>}
     </li>
@@ -94,10 +115,19 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   const lastExecutedKeyword = useRef<string | undefined>(undefined)
   const [candidates, setCandidates] = useState<readonly Candidate[]>([])
   const [page, setPage] = useState(1)
+  const [selectedId, setSelectedId] = useState<string>()
+  const [submittedGids, setSubmittedGids] = useState<ReadonlyMap<string, string>>(new Map())
+  const submittedKeys = new Set(submittedGids.keys())
+  const refreshSubmissions = useCallback(async () => {
+    const result = await download.submissions()
+    if (!result.ok) throw result.error
+    setSubmittedGids(new Map(result.value.map(record => [record.key, record.gid])))
+  }, [download])
   const pageSize = 20
   const load = useCallback(async (refresh: boolean) => {
     setState({ kind: 'loading' })
     try {
+      await refreshSubmissions()
       if (refresh && lastExecutedKeyword.current === undefined) {
         const result = await download.refresh()
         if (!result.ok) { setState({ kind: 'error' }); return }
@@ -114,20 +144,21 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
     } catch {
       setState({ kind: 'error' })
     }
-  }, [download])
+  }, [download, refreshSubmissions])
   useEffect(() => { void load(false) }, [load])
   const runSearch = useCallback(async () => {
     setState({ kind: 'loading' })
     setPage(1)
     lastExecutedKeyword.current = keyword
     try {
+      await refreshSubmissions()
       const result = await download.search(keyword)
       if (result.ok) setCandidates(result.value)
       setState(result.ok ? { kind: 'ready' } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
     }
-  }, [download, keyword])
+  }, [download, keyword, refreshSubmissions])
   const ordered = order(candidates, sort)
   const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize))
   const visible = ordered.slice((page - 1) * pageSize, page * pageSize)
@@ -163,7 +194,10 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
             ))}
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: 420, overflowY: 'auto' }}>
-            {visible.map(candidate => <CandidateRow key={candidate.id} candidate={candidate} t={t} download={download} />)}
+            {visible.map(candidate => <CandidateRow key={candidate.id} candidate={candidate} t={t} download={download}
+              gid={submittedKeys.has(candidate.dedupeKey) ? submittedGids.get(candidate.dedupeKey) : undefined}
+              selected={selectedId === candidate.id} select={() => { setSelectedId(candidate.id) }}
+              refreshSubmissions={refreshSubmissions} />)}
           </ul>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
             <button type="button" disabled={page <= 1} onClick={() => { setPage(value => Math.max(1, value - 1)) }}>‹</button>

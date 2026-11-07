@@ -105,3 +105,36 @@ describe('createDownloadCoordinator', () => {
     await pending
   })
 })
+
+it('resubmits recorded keys once, preserves records on failure, and shares the in-flight guard', async () => {
+  const { coordinator, store, add } = setup()
+  const entry = candidate('recorded')
+  store.record(entry.dedupeKey, 'old')
+  const gate = Promise.withResolvers<{ gid: string }>()
+  add.mockReturnValueOnce(gate.promise)
+  const pending = coordinator.resubmit(entry)
+  expect(await coordinator.resubmit(entry)).toEqual({ alreadySubmitting: true })
+  expect(await coordinator.submit(entry)).toEqual({ alreadySubmitted: 'old' })
+  expect(store.list()).toEqual([{ key: entry.dedupeKey, gid: 'old' }])
+  expect(add).toHaveBeenCalledExactlyOnceWith(entry)
+  gate.resolve({ gid: 'new' })
+  expect(await pending).toEqual({ gid: 'new' })
+  expect(store.list()).toEqual([{ key: entry.dedupeKey, gid: 'new' }])
+  add.mockRejectedValueOnce(new Error('offline'))
+  await expect(coordinator.resubmit(entry)).rejects.toThrow('offline')
+  expect(store.list()).toEqual([{ key: entry.dedupeKey, gid: 'new' }])
+  expect(await coordinator.resubmit({ ...entry, submittable: false })).toEqual({ unsubmittable: true })
+  expect(add).toHaveBeenCalledTimes(2)
+  expect(await coordinator.resubmit(entry)).toEqual({ gid: 'gid:recorded' })
+})
+
+it('blocks resubmit while an ordinary submission is pending', async () => {
+  const { coordinator, add } = setup()
+  const gate = Promise.withResolvers<{ gid: string }>()
+  add.mockReturnValueOnce(gate.promise)
+  const pending = coordinator.submit(candidate('pending'))
+  expect(await coordinator.resubmit(candidate('pending'))).toEqual({ alreadySubmitting: true })
+  expect(add).toHaveBeenCalledOnce()
+  gate.resolve({ gid: 'first' })
+  await pending
+})

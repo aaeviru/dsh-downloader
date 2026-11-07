@@ -38,6 +38,16 @@ export function createDownloadService(deps) {
                 throw new UnknownCandidateError(candidateId);
             return coordinator.submit(candidate);
         },
+        submissions() {
+            return deps.store.list();
+        },
+        async resubmit(candidateId) {
+            const candidate = cache?.find(candidate => candidate.id === candidateId)
+                ?? (await discover()).find(candidate => candidate.id === candidateId);
+            if (!candidate)
+                throw new UnknownCandidateError(candidateId);
+            return coordinator.resubmit(candidate);
+        },
         status(gid) {
             return deps.downloader.status(gid);
         },

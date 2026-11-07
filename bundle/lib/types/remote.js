@@ -58,6 +58,8 @@ let DownloadRemote = (() => {
     let _search_decorators;
     let _list_decorators;
     let _add_decorators;
+    let _submissions_decorators;
+    let _resubmit_decorators;
     let _status_decorators;
     let _refresh_decorators;
     return class DownloadRemote extends _classSuper {
@@ -66,11 +68,15 @@ let DownloadRemote = (() => {
             _search_decorators = [Remote('search')];
             _list_decorators = [Remote('list')];
             _add_decorators = [Remote('add')];
+            _submissions_decorators = [Remote('submissions')];
+            _resubmit_decorators = [Remote('resubmit')];
             _status_decorators = [Remote('status')];
             _refresh_decorators = [Remote('refresh')];
             __esDecorate(this, null, _search_decorators, { kind: "method", name: "search", static: false, private: false, access: { has: obj => "search" in obj, get: obj => obj.search }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _list_decorators, { kind: "method", name: "list", static: false, private: false, access: { has: obj => "list" in obj, get: obj => obj.list }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _add_decorators, { kind: "method", name: "add", static: false, private: false, access: { has: obj => "add" in obj, get: obj => obj.add }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _submissions_decorators, { kind: "method", name: "submissions", static: false, private: false, access: { has: obj => "submissions" in obj, get: obj => obj.submissions }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _resubmit_decorators, { kind: "method", name: "resubmit", static: false, private: false, access: { has: obj => "resubmit" in obj, get: obj => obj.resubmit }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _status_decorators, { kind: "method", name: "status", static: false, private: false, access: { has: obj => "status" in obj, get: obj => obj.status }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _refresh_decorators, { kind: "method", name: "refresh", static: false, private: false, access: { has: obj => "refresh" in obj, get: obj => obj.refresh }, metadata: _metadata }, null, _instanceExtraInitializers);
             if (_metadata) Object.defineProperty(this, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
@@ -82,6 +88,7 @@ let DownloadRemote = (() => {
         }
         /** The service the tools and the Remote methods share. */
         service = __runInitializers(this, _instanceExtraInitializers);
+        ready;
         constructor(ctx, config) {
             super(ctx, 'download', { namespace: 'download' });
             const storeReady = createPersistentSubmitStore(createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)));
@@ -108,6 +115,7 @@ let DownloadRemote = (() => {
                     },
                 });
             });
+            this.ready = ready;
             // Observe hydration failures through the host lifecycle as well as callers.
             ctx.effect(async () => {
                 await ready;
@@ -117,6 +125,7 @@ let DownloadRemote = (() => {
             this.service = {
                 search: async (keyword) => (await ready).search(keyword),
                 listCandidates: async () => (await ready).listCandidates(),
+                resubmit: async (candidateId) => (await ready).resubmit(candidateId),
                 add: async (candidateId) => (await ready).add(candidateId),
                 status: async (gid) => (await ready).status(gid),
                 refresh: async () => (await ready).refresh(),
@@ -144,6 +153,21 @@ let DownloadRemote = (() => {
          */
         add(candidateId) {
             return this.service.add(candidateId);
+        }
+        /**
+         * Read accepted submissions after store hydration.
+         * @returns Records keyed by candidate dedupe key.
+         */
+        async submissions() {
+            return (await this.ready).submissions();
+        }
+        /**
+         * Explicitly submit a candidate again, preserving its old record on failure.
+         * @param candidateId - Candidate identifier resolved by the service.
+         * @returns The new gid or a pending/unsupported outcome.
+         */
+        resubmit(candidateId) {
+            return this.service.resubmit(candidateId);
         }
         /**
          * Read the state of one aria2 download.

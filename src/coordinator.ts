@@ -35,6 +35,12 @@ export type SubmitResult =
 /** Suppresses recorded and per-instance pending duplicates. */
 export interface DownloadCoordinator {
   submit(candidate: Candidate): Promise<SubmitResult>
+  /**
+   * Explicitly submit again; failed attempts preserve the previous record.
+   * @param candidate - Candidate to send, even when its key is recorded.
+   * @returns The new gid or an in-flight/unsupported outcome.
+   */
+  resubmit(candidate: Candidate): Promise<SubmitResult>
 }
 
 /**
@@ -49,10 +55,10 @@ export function createDownloadCoordinator(deps: {
   const { downloader, store } = deps
   const inFlight = new Map<string, true>()
 
-  async function submit(candidate: Candidate): Promise<SubmitResult> {
+  async function run(candidate: Candidate, resubmit: boolean): Promise<SubmitResult> {
     if (!candidate.submittable) return { unsubmittable: true }
     const key = candidate.dedupeKey
-    if (store.has(key)) {
+    if (!resubmit && store.has(key)) {
       const record = store.list().find(record => record.key === key)
       if (record === undefined) throw new Error(`SubmitStore has key "${key}" but no matching record`)
       return { alreadySubmitted: record.gid }
@@ -68,5 +74,8 @@ export function createDownloadCoordinator(deps: {
     }
   }
 
-  return { submit }
+  return {
+    submit: candidate => run(candidate, false),
+    resubmit: candidate => run(candidate, true),
+  }
 }

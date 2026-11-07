@@ -14,6 +14,8 @@ it('registers the download namespace and delegates every method to the shared se
     has: () => false, list: () => [], record: () => {}, flush,
   })
   const service = {
+    submissions: vi.fn(() => [{ key: 'key', gid: 'old' }]),
+    resubmit: vi.fn(async (_id: string) => ({ gid: 'new' })),
     search: vi.fn(async (_keyword: string) => []),
     listCandidates: vi.fn(async () => []),
     add: vi.fn(async (_id: string) => ({ gid: 'gid' })),
@@ -40,6 +42,10 @@ it('registers the download namespace and delegates every method to the shared se
   expect(await remote.refresh()).toEqual({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 })
   expect(shared.add).not.toHaveBeenCalled()
   expect(await remote.add('candidate')).toEqual({ gid: 'gid' })
+  expect(await remote.submissions()).toEqual([{ key: 'key', gid: 'old' }])
+  expect(await remote.resubmit('candidate')).toEqual({ gid: 'new' })
+  expect(shared.submissions).toHaveBeenCalledOnce()
+  expect(shared.resubmit).toHaveBeenCalledExactlyOnceWith('candidate')
   expect(await remote.status('gid')).toEqual({ state: 'active' })
   expect(shared.search).toHaveBeenCalledWith('term')
   expect(shared.listCandidates).toHaveBeenCalledOnce()
@@ -53,6 +59,7 @@ it('registers the download namespace and delegates every method to the shared se
 it('hands the service a keyword-scoped source factory', async () => {
   vi.mocked(createPersistentSubmitStore).mockResolvedValue({ has: () => false, list: () => [], record: () => {}, flush: async () => {} })
   vi.mocked(createDownloadService).mockReturnValue({
+    submissions: () => [], resubmit: async () => ({ gid: 'g' }),
     search: async () => [], listCandidates: async () => [], add: async () => ({ gid: 'g' }),
     status: async () => ({ state: 'active' }), refresh: async () => ({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 }),
   })

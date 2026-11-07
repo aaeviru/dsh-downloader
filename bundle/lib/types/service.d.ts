@@ -1,5 +1,5 @@
 import type { Candidate } from './candidate.ts';
-import type { Downloader, Source, SubmitResult, SubmitStore } from './coordinator.ts';
+import type { Downloader, Source, SubmitRecord, SubmitResult, SubmitStore } from './coordinator.ts';
 /** Read-only discovery results; known counts keys already recorded in the submission store. */
 export interface RefreshResult {
     readonly candidates: readonly Candidate[];
@@ -18,6 +18,17 @@ export interface DownloadService {
     search(keyword: string): Promise<readonly Candidate[]>;
     listCandidates(): Promise<readonly Candidate[]>;
     add(candidateId: string): Promise<SubmitResult>;
+    /**
+     * Read accepted submissions.
+     * @returns Store records keyed by candidate dedupe key.
+     */
+    submissions(): readonly SubmitRecord[];
+    /**
+     * Submit again, replacing the record only on success.
+     * @param candidateId - Identifier from the last discovery; a miss triggers one fresh discovery.
+     * @returns The submission outcome; unknown identifiers reject with UnknownCandidateError.
+     */
+    resubmit(candidateId: string): Promise<SubmitResult>;
     status(gid: string): Promise<{
         state: string;
     }>;

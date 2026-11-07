@@ -4,22 +4,26 @@ import type {
   TypertRemoteInfo,
   TypertRemoteMethod,
 } from '@deepseek-ai/dsh-typert-protocol'
-import type { Candidate, RefreshResult, SubmitResult } from '@deepseek-ai/dsh-experimental-downloader/types'
+import type { Candidate, RefreshResult, SubmitRecord, SubmitResult } from '@deepseek-ai/dsh-experimental-downloader/types'
 
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteNamespace$646f776e6c6f6164 {
     add: (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     list: () => Promise<RemoteResult<readonly Candidate[]>>
     refresh: () => Promise<RemoteResult<RefreshResult>>
+    resubmit: (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     search: (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
     status: (gid: string) => Promise<RemoteResult<{ state: string; }>>
+    submissions: () => Promise<RemoteResult<readonly SubmitRecord[]>>
   }
   interface TypertRemoteMap {
     'download/add': (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     'download/list': () => Promise<RemoteResult<readonly Candidate[]>>
     'download/refresh': () => Promise<RemoteResult<RefreshResult>>
+    'download/resubmit': (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     'download/search': (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
     'download/status': (gid: string) => Promise<RemoteResult<{ state: string; }>>
+    'download/submissions': () => Promise<RemoteResult<readonly SubmitRecord[]>>
   }
   interface TypertRemoteNamespaceMap {
     'download': TypertRemoteNamespace$646f776e6c6f6164
@@ -30,8 +34,10 @@ export declare const TYPERT_REMOTE: TypertRemoteInfo<{
   readonly 'download/add': TypertRemoteMethod<{ readonly 'candidateId': string }, SubmitResult>
   readonly 'download/list': TypertRemoteMethod<{  }, readonly Candidate[]>
   readonly 'download/refresh': TypertRemoteMethod<{  }, RefreshResult>
+  readonly 'download/resubmit': TypertRemoteMethod<{ readonly 'candidateId': string }, SubmitResult>
   readonly 'download/search': TypertRemoteMethod<{ readonly 'keyword': string }, readonly Candidate[]>
   readonly 'download/status': TypertRemoteMethod<{ readonly 'gid': string }, { state: string; }>
+  readonly 'download/submissions': TypertRemoteMethod<{  }, readonly SubmitRecord[]>
 }>
 export default TYPERT_REMOTE
 //# sourceMappingURL=typert.remote-client.d.ts.map

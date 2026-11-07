@@ -54,6 +54,18 @@ const _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema = 
   'known': z.number().readonly(),
   'unsubmittable': z.number().readonly(),
 }))
+let _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema$value ??= z.union([z.object({
+  'gid': z.string().readonly(),
+}), z.object({
+  'alreadySubmitted': z.string().readonly(),
+}), z.object({
+  'alreadySubmitting': z.literal(true).readonly(),
+}), z.object({
+  'unsubmittable': z.literal(true).readonly(),
+})]))
 let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value
@@ -79,8 +91,15 @@ let _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_status_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value ??= z.object({
   'state': z.string(),
 }))
+let _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value ??= z.array(z.object({
+  'key': z.string().readonly(),
+  'gid': z.string().readonly(),
+})))
 let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value
@@ -119,7 +138,7 @@ const $remote = createTypertRemoteInfo({
         description: 'the submission outcome, GID, timestamp, and call ID.',
         jsonSchemaError: 'typert tool schema: selected union branches overlap or have no required discriminator',
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":106,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":110,"column":3},
     },
     'download/list': {
       service: 'download',
@@ -134,7 +153,7 @@ const $remote = createTypertRemoteInfo({
         description: 'the current candidate set.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":96,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":100,"column":3},
     },
     'download/refresh': {
       service: 'download',
@@ -149,7 +168,39 @@ const $remote = createTypertRemoteInfo({
         description: 'the candidates and discovery counts; source failure preserves the previous cache.',
         jsonSchema: {"type":"object","properties":{"candidates":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},"discovered":{"type":"number"},"known":{"type":"number"},"unsubmittable":{"type":"number"}},"required":["candidates","discovered","known","unsubmittable"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":125,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":148,"column":3},
+    },
+    'download/resubmit': {
+      service: 'download',
+      description: 'Explicitly submit a candidate again, preserving its old record on failure.',
+      invocation: { kind: 'direct' },
+      parameters: [
+        {
+          name: 'candidateId',
+          description: 'Candidate identifier resolved by the service.',
+          source: 'json',
+          codec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/resubmit:candidateId',
+            create: _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema,
+            jsonSchema: {"type":"string"},
+          },
+          strictCodec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/resubmit:candidateId',
+            create: _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema,
+            jsonSchema: {"type":"string"},
+          },
+        },
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#SubmitResult',
+        create: _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema,
+        description: 'The new gid or a pending/unsupported outcome.',
+        jsonSchemaError: 'typert tool schema: selected union branches overlap or have no required discriminator',
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":129,"column":3},
     },
     'download/search': {
       service: 'download',
@@ -181,7 +232,7 @@ const $remote = createTypertRemoteInfo({
         description: 'the matching candidates after deduplication.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":87,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":91,"column":3},
     },
     'download/status': {
       service: 'download',
@@ -213,7 +264,22 @@ const $remote = createTypertRemoteInfo({
         description: 'the aria2-reported state for that GID.',
         jsonSchema: {"type":"object","properties":{"state":{"type":"string"}},"required":["state"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":116,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":139,"column":3},
+    },
+    'download/submissions': {
+      service: 'download',
+      description: 'Read accepted submissions after store hydration.',
+      invocation: { kind: 'direct' },
+      parameters: [
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/submissions:result',
+        create: _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema,
+        description: 'Records keyed by candidate dedupe key.',
+        jsonSchema: {"type":"array","items":{"type":"object","properties":{"key":{"type":"string"},"gid":{"type":"string"}},"required":["key","gid"],"additionalProperties":true}},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":119,"column":9},
     },
   },
 }, z)

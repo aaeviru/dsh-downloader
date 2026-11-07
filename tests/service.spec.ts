@@ -188,3 +188,25 @@ describe('DownloadService', () => {
     expect(status).toHaveBeenCalledWith('gid')
   })
 })
+
+it('lists Host records and resubmits from the last discovery without fetching again', async () => {
+  const entry = candidate('known')
+  const { service, store, add, list } = setup([entry])
+  store.record(entry.dedupeKey, 'old')
+  expect(service.submissions()).toEqual([{ key: entry.dedupeKey, gid: 'old' }])
+  await service.search('known')
+  expect(await service.resubmit(entry.id)).toEqual({ gid: 'download' })
+  expect(list).toHaveBeenCalledOnce()
+  expect(add).toHaveBeenCalledExactlyOnceWith(entry)
+  expect(service.submissions()).toEqual([{ key: entry.dedupeKey, gid: 'download' }])
+})
+
+it('resubmit discovers once without a cache and retries discovery once on a cache miss', async () => {
+  const { service, list } = setup([candidate('first')])
+  expect(await service.resubmit('first')).toEqual({ gid: 'download' })
+  list.mockResolvedValueOnce([candidate('next')])
+  expect(await service.resubmit('next')).toEqual({ gid: 'download' })
+  expect(list).toHaveBeenCalledTimes(2)
+  await expect(service.resubmit('missing')).rejects.toBeInstanceOf(UnknownCandidateError)
+  expect(list).toHaveBeenCalledTimes(3)
+})

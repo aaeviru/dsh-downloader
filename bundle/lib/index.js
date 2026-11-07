@@ -181,10 +181,10 @@ function dedupeCandidates(list) {
 function createDownloadCoordinator(deps) {
 	const { downloader, store } = deps;
 	const inFlight = /* @__PURE__ */ new Map();
-	async function submit(candidate) {
+	async function run(candidate, resubmit) {
 		if (!candidate.submittable) return { unsubmittable: true };
 		const key = candidate.dedupeKey;
-		if (store.has(key)) {
+		if (!resubmit && store.has(key)) {
 			const record = store.list().find((record) => record.key === key);
 			if (record === void 0) throw new Error(`SubmitStore has key "${key}" but no matching record`);
 			return { alreadySubmitted: record.gid };
@@ -199,7 +199,10 @@ function createDownloadCoordinator(deps) {
 			inFlight.delete(key);
 		}
 	}
-	return { submit };
+	return {
+		submit: (candidate) => run(candidate, false),
+		resubmit: (candidate) => run(candidate, true)
+	};
 }
 //#endregion
 //#region lib/types/service.js
@@ -238,6 +241,14 @@ function createDownloadService(deps) {
 			const candidate = (!cache || cache.length === 0 ? await discover() : cache).find((candidate) => candidate.id === candidateId);
 			if (!candidate) throw new UnknownCandidateError(candidateId);
 			return coordinator.submit(candidate);
+		},
+		submissions() {
+			return deps.store.list();
+		},
+		async resubmit(candidateId) {
+			const candidate = cache?.find((candidate) => candidate.id === candidateId) ?? (await discover()).find((candidate) => candidate.id === candidateId);
+			if (!candidate) throw new UnknownCandidateError(candidateId);
+			return coordinator.resubmit(candidate);
 		},
 		status(gid) {
 			return deps.downloader.status(gid);
@@ -5578,6 +5589,8 @@ let DownloadRemote = (() => {
 	let _search_decorators;
 	let _list_decorators;
 	let _add_decorators;
+	let _submissions_decorators;
+	let _resubmit_decorators;
 	let _status_decorators;
 	let _refresh_decorators;
 	return class DownloadRemote extends _classSuper {
@@ -5586,6 +5599,8 @@ let DownloadRemote = (() => {
 			_search_decorators = [Remote("search")];
 			_list_decorators = [Remote("list")];
 			_add_decorators = [Remote("add")];
+			_submissions_decorators = [Remote("submissions")];
+			_resubmit_decorators = [Remote("resubmit")];
 			_status_decorators = [Remote("status")];
 			_refresh_decorators = [Remote("refresh")];
 			__esDecorate(this, null, _search_decorators, {
@@ -5618,6 +5633,28 @@ let DownloadRemote = (() => {
 				access: {
 					has: (obj) => "add" in obj,
 					get: (obj) => obj.add
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate(this, null, _submissions_decorators, {
+				kind: "method",
+				name: "submissions",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "submissions" in obj,
+					get: (obj) => obj.submissions
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate(this, null, _resubmit_decorators, {
+				kind: "method",
+				name: "resubmit",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "resubmit" in obj,
+					get: (obj) => obj.resubmit
 				},
 				metadata: _metadata
 			}, null, _instanceExtraInitializers);
@@ -5657,6 +5694,7 @@ let DownloadRemote = (() => {
 		}
 		/** The service the tools and the Remote methods share. */
 		service = __runInitializers(this, _instanceExtraInitializers);
+		ready;
 		constructor(ctx, config) {
 			super(ctx, "download", { namespace: "download" });
 			const storeReady = createPersistentSubmitStore(createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)));
@@ -5689,6 +5727,7 @@ let DownloadRemote = (() => {
 					}
 				});
 			});
+			this.ready = ready;
 			ctx.effect(async () => {
 				await ready;
 				const store = await storeReady;
@@ -5697,6 +5736,7 @@ let DownloadRemote = (() => {
 			this.service = {
 				search: async (keyword) => (await ready).search(keyword),
 				listCandidates: async () => (await ready).listCandidates(),
+				resubmit: async (candidateId) => (await ready).resubmit(candidateId),
 				add: async (candidateId) => (await ready).add(candidateId),
 				status: async (gid) => (await ready).status(gid),
 				refresh: async () => (await ready).refresh()
@@ -5724,6 +5764,21 @@ let DownloadRemote = (() => {
 		*/
 		add(candidateId) {
 			return this.service.add(candidateId);
+		}
+		/**
+		* Read accepted submissions after store hydration.
+		* @returns Records keyed by candidate dedupe key.
+		*/
+		async submissions() {
+			return (await this.ready).submissions();
+		}
+		/**
+		* Explicitly submit a candidate again, preserving its old record on failure.
+		* @param candidateId - Candidate identifier resolved by the service.
+		* @returns The new gid or a pending/unsupported outcome.
+		*/
+		resubmit(candidateId) {
+			return this.service.resubmit(candidateId);
 		}
 		/**
 		* Read the state of one aria2 download.

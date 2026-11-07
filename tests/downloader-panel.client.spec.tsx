@@ -18,6 +18,8 @@ const candidate = (overrides: Partial<Candidate> = {}): Candidate => ({
 
 const namespace = (list: DownloadNamespace['list'], add?: DownloadNamespace['add']): DownloadNamespace => ({
   list,
+  submissions: async () => ({ ok: true, value: [] }),
+  resubmit: vi.fn(),
   search: list,
   refresh: async () => ({ ok: true, value: { candidates: [], discovered: 0, known: 0, unsubmittable: 0 } }),
   add: add ?? (async () => ({ ok: true, value: { gid: 'g1' } })),
@@ -35,11 +37,14 @@ it('shows the empty state when the host returns no candidates', async () => {
 
 it('lists candidates and submits one, showing the returned gid', async () => {
   const add = vi.fn(async () => ({ ok: true as const, value: { gid: 'gid-1' } }))
-  render(<DownloaderPanel t={t} download={namespace(async () => ({ ok: true, value: [candidate()] }), add)} />)
+  const download = namespace(async () => ({ ok: true, value: [candidate()] }), add)
+  download.submissions = vi.fn().mockResolvedValueOnce({ ok: true, value: [] }).mockResolvedValue({ ok: true, value: [{ key: 'ih:x', gid: 'gid-1' }] })
+  render(<DownloaderPanel t={t} download={download} />)
   expect(await screen.findByText('Example release')).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: /Example release/ }))
   await waitFor(() => { expect(screen.getByRole('status').textContent).toContain('gid-1') })
-  expect(add).toHaveBeenCalledWith('c1')
+  expect(add).toHaveBeenCalledExactlyOnceWith('c1')
+  await waitFor(() => { expect(screen.getByRole('listitem').dataset.submitted).toBe('true') })
 })
 
 it('shows the error state when the host call fails', async () => {
@@ -143,6 +148,8 @@ it('B6 refreshed rows submit only the clicked candidate and retain persisted ded
     },
   })
   const download: DownloadNamespace = {
+    submissions: async () => ({ ok: true, value: service.submissions() }),
+    resubmit: async id => ({ ok: true, value: await service.resubmit(id) }),
     list: async () => ({ ok: true, value: await service.listCandidates() }),
     search: async keyword => ({ ok: true, value: await service.search(keyword) }),
     refresh: async () => ({ ok: true, value: await service.refresh() }),
@@ -156,7 +163,117 @@ it('B6 refreshed rows submit only the clicked candidate and retain persisted ded
   fireEvent.click(screen.getByRole('button', { name: /Example release/ }))
   await screen.findByText('submitted manual-gid')
   fireEvent.click(screen.getByRole('button', { name: /Example release/ }))
-  await screen.findByText('alreadySubmitted')
+  expect(screen.getByRole('button', { name: 'resubmit' })).toBeTruthy()
   expect(add.mock.calls).toEqual([[selected]])
   expect([...records]).toEqual([[selected.dedupeKey, 'manual-gid']])
+})
+
+it('v7 B1/B3/B5/B8 uses Host keys, selects without requests and moves the explicit entry', async () => {
+  const entries = [
+    candidate(),
+    candidate({ id: 'c2', title: 'Second', dedupeKey: 'other' }),
+    candidate({ id: 'c3', title: 'Example release', dedupeKey: 'new' }),
+  ]
+  const download = namespace(async () => ({ ok: true, value: entries }), vi.fn())
+  download.submissions = vi.fn(async () => ({ ok: true as const, value: [{ key: 'ih:x', gid: 'old' }, { key: 'other', gid: 'second' }] }))
+  const view = render(<DownloaderPanel t={t} download={download} />)
+  await screen.findByText('submitted old')
+  const rows = screen.getAllByRole('listitem')
+  expect(rows.map(row => row.dataset.submitted)).toEqual(['true', 'true', 'false'])
+  expect(rows[0]?.getAttribute('style')).toContain('var(--dsw-alias-state-success-tertiary)')
+  expect(screen.queryByRole('button', { name: 'resubmit' })).toBeNull()
+  fireEvent.click(screen.getAllByRole('button', { name: 'Example release' })[0]!)
+  expect(screen.getByRole('button', { name: 'resubmit' }).closest('li')).toBe(rows[0])
+  fireEvent.click(screen.getByRole('button', { name: 'Second' }))
+  expect(screen.getByRole('button', { name: 'resubmit' }).closest('li')).toBe(rows[1])
+  expect(download.add).not.toHaveBeenCalled()
+  expect(download.resubmit).not.toHaveBeenCalled()
+  view.unmount()
+  render(<DownloaderPanel t={t} download={download} />)
+  await screen.findByText('submitted old')
+  expect(screen.queryByRole('button', { name: 'resubmit' })).toBeNull()
+})
+
+it.each(['success', 'failure', 'rejection'] as const)('v7 B6/B7 re-download %s makes one request and keeps the recorded row green', async mode => {
+  const download = namespace(async () => ({ ok: true, value: [candidate()] }), vi.fn())
+  let gid = 'old'
+  download.submissions = vi.fn(async () => ({ ok: true as const, value: [{ key: 'ih:x', gid }] }))
+  const gate = Promise.withResolvers<Awaited<ReturnType<DownloadNamespace['resubmit']>>>()
+  download.resubmit = vi.fn(() => gate.promise)
+  render(<DownloaderPanel t={t} download={download} />)
+  await screen.findByText('submitted old')
+  fireEvent.click(screen.getByRole('button', { name: 'Example release' }))
+  const button = screen.getByRole('button', { name: 'resubmit' })
+  expect(button.tagName).toBe('BUTTON')
+  button.focus()
+  expect(document.activeElement).toBe(button)
+  fireEvent.click(button)
+  expect(button.hasAttribute('disabled')).toBe(true)
+  fireEvent.click(button)
+  expect(download.resubmit).toHaveBeenCalledExactlyOnceWith('c1')
+  expect(download.add).not.toHaveBeenCalled()
+  if (mode === 'success') {
+    gid = 'new'
+    gate.resolve({ ok: true, value: { gid } })
+    await screen.findByText('submitted new')
+    expect(download.submissions).toHaveBeenCalledTimes(2)
+  } else {
+    if (mode === 'rejection') gate.reject(new Error('offline'))
+    else gate.resolve({ ok: false, error: new RemoteError('gateway/internal', 'offline', {}) })
+    await screen.findByText('submitError')
+    expect(screen.getByText('submitted old')).toBeTruthy()
+  }
+  await waitFor(() => { expect(button.hasAttribute('disabled')).toBe(false) })
+  expect(screen.getByRole('listitem').dataset.submitted).toBe('true')
+  expect(download.add).not.toHaveBeenCalled()
+})
+
+it('v7 B2 pending, failed and unsupported rows never become submitted', async () => {
+  const gate = Promise.withResolvers<Awaited<ReturnType<DownloadNamespace['add']>>>()
+  const download = namespace(async () => ({ ok: true, value: [candidate(), candidate({ id: 'blocked', title: 'Blocked', submittable: false })] }), vi.fn(() => gate.promise))
+  render(<DownloaderPanel t={t} download={download} />)
+  await screen.findByText('Example release')
+  expect(screen.getByRole('button', { name: 'Blocked' }).hasAttribute('disabled')).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Example release' }))
+  expect(screen.getAllByRole('listitem').every(row => row.dataset.submitted === 'false')).toBe(true)
+  gate.reject(new Error('offline'))
+  await screen.findByText('submitError')
+  expect(screen.getAllByRole('listitem').every(row => row.dataset.submitted === 'false')).toBe(true)
+})
+
+it('v7 B3 retains submitted keys across paging, search and refresh', async () => {
+  const entries = Array.from({ length: 21 }, (_, index) => candidate({
+    id: String(index), title: 'Release ' + index, dedupeKey: 'key:' + index,
+  }))
+  const download = namespace(async () => ({ ok: true, value: entries }), vi.fn())
+  download.submissions = vi.fn(async () => ({ ok: true as const, value: [{ key: 'key:20', gid: 'persisted' }] }))
+  download.search = vi.fn(async () => ({ ok: true as const, value: [{ ...entries[20]!, id: 'changed-id', title: 'Renamed' }] }))
+  download.refresh = vi.fn(async () => ({ ok: true as const, value: { candidates: entries, discovered: 21, known: 1, unsubmittable: 0 } }))
+  render(<DownloaderPanel t={t} download={download} />)
+  await screen.findByText('Release 0')
+  fireEvent.click(screen.getByRole('button', { name: '›' }))
+  await screen.findByText('submitted persisted')
+  fireEvent.click(screen.getByRole('button', { name: '‹' }))
+  expect(screen.queryByText('submitted persisted')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: '›' }))
+  await screen.findByText('submitted persisted')
+  fireEvent.click(screen.getByRole('button', { name: 'refresh' }))
+  await waitFor(() => { expect(download.refresh).toHaveBeenCalledOnce() })
+  await screen.findByText('Release 0')
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Renamed' } })
+  fireEvent.click(screen.getByRole('button', { name: 'search' }))
+  await screen.findByText('Renamed')
+  expect(screen.getByRole('listitem').dataset.submitted).toBe('true')
+  expect(screen.getByText('submitted persisted')).toBeTruthy()
+  expect(download.submissions).toHaveBeenCalledTimes(3)
+  expect(download.add).not.toHaveBeenCalled()
+  expect(download.resubmit).not.toHaveBeenCalled()
+})
+
+it('v7 reports a failed submissions read without inventing submitted keys', async () => {
+  const download = namespace(async () => ({ ok: true, value: [candidate()] }), vi.fn())
+  download.submissions = vi.fn(async () => ({ ok: false as const, error: new RemoteError('gateway/internal', 'offline', {}) }))
+  render(<DownloaderPanel t={t} download={download} />)
+  await screen.findByRole('alert')
+  expect(download.add).not.toHaveBeenCalled()
 })
