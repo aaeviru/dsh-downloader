@@ -11,6 +11,8 @@ English | [中文](README.zh.md)
 
 Searches a configured RSS feed for download candidates, submits one candidate to an aria2 JSON-RPC endpoint with a resolved credential, and reports the download's state. The host exposes three tools and a `download` Remote namespace; a browser panel lists candidates, sorts columns, and shows submission results. Candidates deduplicate by info hash, and submissions persist to an atomically written JSON file under the harness home. Unauthenticated aria2, an unreachable feed, and unknown candidate IDs surface as explicit failures.
 
+The search field offers Host-persisted favorites and the 50 most recent successful non-empty searches in `DSH_HOME/downloader/preferences.json`. Keywords retain case, inner spaces, quotes, and operators; only surrounding whitespace is trimmed. Selecting a saved keyword only fills the field. Favorite, delete, and clear actions never search or submit downloads; clearing history keeps favorites. Writes are serialized and atomically replace an owner-only file. Failed loads never overwrite stored data, and failed saves retain the last committed preferences and show an error in the panel. The file has one Host writer; concurrent processes sharing it are not coordinated.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

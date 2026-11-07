@@ -24,7 +24,15 @@ export function createDownloadService(deps) {
         return cache;
     }
     return {
+        async preferences() { return deps.preferences.value; },
+        recordSearch: keyword => deps.preferences.addSearch(keyword),
+        toggleFavorite: keyword => deps.preferences.toggleFavorite(keyword),
+        deleteSearch: keyword => deps.preferences.deleteSearch(keyword),
+        clearHistory: () => deps.preferences.clearHistory(),
         async search(keyword) {
+            keyword = keyword.trim();
+            if (!keyword)
+                return [];
             source = deps.makeSource ? deps.makeSource(keyword) : deps.source;
             return discover();
         },

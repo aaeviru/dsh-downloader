@@ -1,3 +1,5 @@
+import { createJsonFilePreferencesBackend, openPreferencesStore } from './preferences.ts'
+import type { Preferences } from './preferences.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
@@ -43,13 +45,14 @@ export class DownloadRemote extends TypertRemoteService {
     const storeReady = createPersistentSubmitStore(
       createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)),
     )
-    const ready = storeReady.then((store) => {
+    const preferencesReady = openPreferencesStore(createJsonFilePreferencesBackend(resolveStorePath('downloader/preferences.json')))
+    const ready = Promise.all([storeReady, preferencesReady]).then(([store, preferences]) => {
       const client = async () => createAria2Client({
         endpoint: config.endpoint, timeoutMs: config.timeoutMs,
         token: (await ctx.credentials.resolve(credentialRef(config.tokenRef)))?.value ?? null,
       })
       return createDownloadService({
-        store,
+        store, preferences,
         // RSS wiring arrives in the next step; discovery is explicitly empty for now.
         source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
         makeSource: keyword => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs }),
@@ -70,9 +73,14 @@ export class DownloadRemote extends TypertRemoteService {
     ctx.effect(async () => {
       await ready
       const store = await storeReady
-      return () => store.flush()
+      return async () => { await Promise.all([store.flush(), (await preferencesReady).flush()]) }
     })
     this.service = {
+      preferences: async () => (await ready).preferences(),
+      recordSearch: async keyword => (await ready).recordSearch(keyword),
+      toggleFavorite: async keyword => (await ready).toggleFavorite(keyword),
+      deleteSearch: async keyword => (await ready).deleteSearch(keyword),
+      clearHistory: async () => (await ready).clearHistory(),
       search: async keyword => (await ready).search(keyword),
       listCandidates: async () => (await ready).listCandidates(),
       resubmit: async candidateId => (await ready).resubmit(candidateId),
@@ -80,6 +88,54 @@ export class DownloadRemote extends TypertRemoteService {
       status: async gid => (await ready).status(gid),
       refresh: async () => (await ready).refresh(),
     }
+  }
+
+  /**
+   * Read committed search preferences.
+   * @returns Committed preferences; persistence failures reject.
+   */
+  @Remote('preferences')
+  preferences(): Promise<Preferences> {
+    return this.service.preferences()
+  }
+
+  /**
+   * Record a successfully executed search without executing it again.
+   * @param keyword - Exact keyword, with surrounding whitespace trimmed.
+   * @returns Committed preferences; persistence failures reject.
+   */
+  @Remote('recordSearch')
+  recordSearch(keyword: string): Promise<Preferences> {
+    return this.service.recordSearch(keyword)
+  }
+
+  /**
+   * Toggle a saved keyword without searching or downloading.
+   * @param keyword - Exact keyword, with surrounding whitespace trimmed.
+   * @returns Committed preferences; persistence failures reject.
+   */
+  @Remote('toggleFavorite')
+  toggleFavorite(keyword: string): Promise<Preferences> {
+    return this.service.toggleFavorite(keyword)
+  }
+
+  /**
+   * Delete one history keyword while retaining favorites.
+   * @param keyword - Exact keyword, with surrounding whitespace trimmed.
+   * @returns Committed preferences; persistence failures reject.
+   */
+  @Remote('deleteSearch')
+  deleteSearch(keyword: string): Promise<Preferences> {
+    return this.service.deleteSearch(keyword)
+  }
+
+  /**
+   * Clear history while retaining favorites.
+   * @returns Committed preferences; persistence failures reject.
+   */
+  @Remote('clearHistory')
+  clearHistory(): Promise<Preferences> {
+    return this.service.clearHistory()
   }
 
   /**

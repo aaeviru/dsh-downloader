@@ -1,3 +1,4 @@
+import type { Preferences } from './preferences.ts';
 import type { Context } from '@deepseek-ai/cordis';
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 import type Schema from '@deepseek-ai/schemastery';
@@ -21,6 +22,34 @@ export declare class DownloadRemote extends TypertRemoteService {
     readonly service: Omit<DownloadService, 'submissions'>;
     private readonly ready;
     constructor(ctx: Context, config: Config);
+    /**
+     * Read committed search preferences.
+     * @returns Committed preferences; persistence failures reject.
+     */
+    preferences(): Promise<Preferences>;
+    /**
+     * Record a successfully executed search without executing it again.
+     * @param keyword - Exact keyword, with surrounding whitespace trimmed.
+     * @returns Committed preferences; persistence failures reject.
+     */
+    recordSearch(keyword: string): Promise<Preferences>;
+    /**
+     * Toggle a saved keyword without searching or downloading.
+     * @param keyword - Exact keyword, with surrounding whitespace trimmed.
+     * @returns Committed preferences; persistence failures reject.
+     */
+    toggleFavorite(keyword: string): Promise<Preferences>;
+    /**
+     * Delete one history keyword while retaining favorites.
+     * @param keyword - Exact keyword, with surrounding whitespace trimmed.
+     * @returns Committed preferences; persistence failures reject.
+     */
+    deleteSearch(keyword: string): Promise<Preferences>;
+    /**
+     * Clear history while retaining favorites.
+     * @returns Committed preferences; persistence failures reject.
+     */
+    clearHistory(): Promise<Preferences>;
     /**
      * Search candidates through the service for one keyword.
      * @param keyword - text matched against candidate titles.
