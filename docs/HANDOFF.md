@@ -245,21 +245,6 @@ cd /home/aaevi/projects/dsh-downloader
 - bundle 已重建并入库（98 个文件）。
 - **已知环境限制**：本机 node 的 `fetch` 连不上外网，所以本地跑真实 feed 会失败；桌面版/正常网络下应可用。若抓取失败，界面会进入 error 态（`Unable to load downloads.`）。
 
-## 15. 安装必须使用打包产物
-
-`install_bundle` 把 bundle 目录以 `link:` 依赖装进 profile；pnpm 不会为 `link:` 目标安装依赖，Host 导入插件时找不到 `@deepseek-ai/dsh-tools` 等包，整个 profile 组合失败，桌面欢迎窗口的 `settings/describe` 返回 `ok:false` 并报 `Web RPC failed`。
-
-正确流程：
-
-```sh
-./scripts/pack.sh                     # 生成 dist/*.tgz
-dsh plugin --profile desktop add dist/deepseek-ai-dsh-experimental-downloader-0.5.1.tgz
-```
-
-- 禁止把 bundle 目录直接作为安装目标（会记录 `link:`）。
-- `bundle/package.json` 必须声明完整运行期依赖：`dsh-tools` 的 peer 链（`dsh-agent`、`dsh-llm`、`dsh-scope`、`dsh-session`、`dsh-system-prompt`、`dsh-user-approval`）、`dsh-typert-protocol`、`dsh-credentials`、`schemastery`、`cordis`。
-- 回归：`./scripts/verify-install.sh` 必须输出 `IMPORT_OK`（打包 → 装进隔离 profile → 从 profile 目录导入）。单元测试无法发现这类发布结构错误。
-
 ## 14. 产物与源码漂移（三次，同根因）
 
 | # | 表现 | 根因 |
@@ -285,27 +270,17 @@ grep -o "page=rss[^']*" /home/aaevi/projects/deepseek-harness/packages/experimen
 
 两行必须一致。更彻底的做法是构建后用 `git diff --exit-code bundle/lib` 检查产物是否就是刚构建的那份。
 
+## 15. 安装布局（两个陷阱）
 
-## 8. 构建与安装（v0.3，过渡方案）
+**陷阱一：`link:` 安装不解析依赖。** 把 bundle 目录作为安装目标，profile 会记录 `link:` 依赖；包管理器不会为它安装依赖，插件 `import` 失败，profile 组合挂载不完整，桌面表现为 `desktop welcome: Web RPC failed`（`settings/describe` 拿不到设置服务）。
 
-**版本约束**：只支持 DSH `0.2.2-rc.1`；`bundle/package.json` 的 `engines.dsh` 是 `>=0.2.2-rc.1 <0.2.3`。
+**陷阱二：手工补全宿主依赖会污染宿主。** 为消掉一次 `ERR_MODULE_NOT_FOUND`，把 `dsh-tools` 的 peer 链（`dsh-agent`、`dsh-llm`、`dsh-session`、`dsh-system-prompt` 等）写进插件 `dependencies`，profile 会装进第二套宿主服务图，出现 `deployment:persona-prefix is already registered`，新建会话失败。
 
-**构建**：`scripts/build-bundle.sh` 把源码同步到 `$DSH_CHECKOUT/packages/experimental/dsh-downloader`，在检出里跑 `tsc -b → generate-typert → tsdown`，再把 `lib/` 回填到本仓 `bundle/lib`。连跑两次后 `git status --porcelain bundle/` 必须为空。
+**正确布局**（对齐已验证可用的外部插件 `dshmarket`）：
 
-**为什么仍依赖检出**：Typert 生成器只把**工作区内的** `@deepseek-ai/dsh-typert-protocol` 当作协议来源；npm 安装的副本解析到插件自己的 `node_modules` 下，会被当成插件自身的注册，`@Remote` 全部识别不到，生成器静默产出 0 个产物（issue #11 的 S1 结论）。因此 B1「不依赖 monorepo 构建」未达成，标 `NOT_VERIFIED`。
+- `dependencies` 为空或只放叶子库；
+- 宿主提供的包一律 `peerDependencies`，本项目只有 `@deepseek-ai/cordis`；
+- 其余依赖（`dsh-tools`、`dsh-typert-protocol`、`dsh-credentials`、`schemastery`、`zod`、`fast-xml-*`）由 `tsdown` 的 `deps.alwaysBundle` 内联进 `lib/`；
+- 安装用打包产物：`./scripts/pack.sh` → `dsh plugin --profile desktop add dist/*.tgz`。
 
-**安装/验收**：必须用**不含该包的干净宿主**，否则 `dsh plugin add` 会先按安装锚点解析包名，命中检出里的 workspace 链接（那份源码 manifest 没有 `dsh.bundle`），于是只装成普通依赖、不建层。
-
-```sh
-cd ~/projects/dsh-downloader/worktree-11   # 或任意工作树
-npm install --prefix .host @deepseek-ai/dsh@0.2.2-rc.1
-DSH_HOME=$PWD/.dsh-home-clean .host/node_modules/.bin/dsh \
-  --profile wdemo --from-default-profile web
-DSH_HOME=$PWD/.dsh-home-clean .host/node_modules/.bin/dsh \
-  plugin --profile wdemo add ./bundle
-DSH_HOME=$PWD/.dsh-home-clean .host/node_modules/.bin/dsh --profile wdemo --port 3099 --no-open
-```
-
-**无头验收**：首启的 “Get started” 对话框会让 `#root` 变 `inert`，用 `Escape` 关闭后再点侧栏 `aria-label="Downloader"`。面板出现候选（`download.list`）→ 点候选出现 `Submitted: <gid>`（`download.add`）→ `$DSH_HOME/downloader/submissions.json` 落在原路径、保持 `0600`。
-
-**未验证**：三个工具在真实 agent 会话中的可调用性（需要模型）、Desktop 安装、仓库级 `verify.sh`（属独立 Contract）。
+**回归** `./scripts/verify-install.sh`：拒绝 `link:` 安装、拒绝宿主包出现在 `dependencies`、拒绝安装过程往 profile 引入新的 `@deepseek-ai/*`，并在隔离 profile 中导入插件，必须输出 `IMPORT_OK`。
