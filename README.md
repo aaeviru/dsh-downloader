@@ -14,6 +14,7 @@ Searches a configured RSS feed for download candidates, submits one candidate to
 ## Table of Contents
 
 - [Use this package](#use-this-package)
+- [Install into a profile](#install-into-a-profile)
 - [Understand the implementation](#understand-the-implementation)
 - [Further Exploration](#further-exploration)
 - [Model Experience](#model-experience)
@@ -38,6 +39,33 @@ Mount it in a host composition that provides `tools`, `credentials`, and `typert
 Search and refresh only discover candidates; they never submit downloads. Refresh fetches the last executed query once, returns `candidates`, `discovered`, `known`, and `unsubmittable`, and preserves the previous candidates and submission records on failure. The panel ignores unexecuted search drafts when refreshing. Submit an individual row or call `download_add` to download it; repeated submissions return the recorded GID.
 
 The panel is optional: it consumes the `download` namespace, occupies the `sidebar.panellist` icon, and adds a page to `main`.
+
+-----
+
+<a id="install-into-a-profile"></a>
+## Install into a profile
+
+The package installs as a DSH bundle for DSH `0.2.2-rc.1`; its `engines.dsh` range refuses other versions. Create a Web profile from the shipped template, install the bundle directory or its packed tarball, and boot it:
+
+```sh
+dsh --profile demo --from-default-profile web
+dsh plugin --profile demo add ./bundle
+dsh --profile demo
+```
+
+The profile's own `cordis.patch.yml` overrides any row by id. A patch replaces the whole `config` value, so restate every key the row needs:
+
+```yaml
+- id: downloader
+  config:
+    endpoint: http://10.0.0.7:8082/jsonrpc
+    tokenRef: ARIA2_TOKEN
+    timeoutMs: 15000
+    storePath: downloader/submissions.json
+    feedUrl: https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2
+```
+
+`dsh plugin --profile demo remove @deepseek-ai/dsh-experimental-downloader` removes the layer and keeps `$DSH_HOME/downloader/submissions.json`. A DSH checkout that still mounts this package under `packages/` resolves the package name to that source copy first, so install into a host that does not mount it.
 
 -----
 
@@ -98,7 +126,8 @@ Unchanged tool declarations preserve a stable request prefix. Tool calls and res
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **Not mounted by the default product.** The Web bundle refuses experimental packages by rule; this package loads through a test overlay or an explicit profile row.
+- **Not shipped in the default product.** Install it as a profile bundle, or mount the source through a test overlay; the shipped Web composition does not include it.
+- **Building needs a DSH checkout.** Typert generation only recognizes the protocol package inside a workspace, so `scripts/build-bundle.sh` builds through `$DSH_CHECKOUT`; a checkout-free build stays `NOT_VERIFIED` in issue #11.
 - **Discovery is feed-scoped.** Keyword search re-scopes the configured RSS feed; there is no separate search index, so a keyword only finds what that feed currently serves.
 - **One store file per profile.** Submissions append to a single JSON file; two harness processes writing the same profile coordinate through neither a lock nor a transaction.
 - **The aria2 token is external.** An endpoint without a matching `tokenRef` credential answers with aria2 error code 1, which surfaces as `Aria2AuthError` instead of a retry.
