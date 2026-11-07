@@ -1,6 +1,9 @@
 node_modules/
-lib/
+/lib/
 *.log
 .DS_Store
 coverage/
 .env
+
+.host/
+.dsh-home*/

@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | 插件真身 | `~/projects/dsh-downloader`（git 远端 `aaeviru/dsh-downloader`，分支 `main`） |
-| 工作区内的入口 | `packages/experimental/dsh-downloader` → **符号链接**指向真身 |
+| 工作区内的入口 | `packages/experimental/dsh-downloader`（当前是**真实目录副本**，由 `scripts/build-bundle.sh` 从本仓同步；历史记录里的符号链接方案已不再使用） |
 | 污染防护 | dsh 仓库的 `.git/info/exclude` 已加该路径，`git status` 不显示 |
 | 会话工作区（写边界） | `/home/aaevi/projects/deepseek-harness` |
 | 沙箱模式 | `workspace-write` + 四个常设例外 |
@@ -151,8 +151,11 @@ git -c credential.helper='!gh auth git-credential' push
 cd /home/aaevi/projects/deepseek-harness
 pnpm vitest run packages/experimental/dsh-downloader/tests/
 ./node_modules/.bin/tsc -b packages/experimental/dsh-downloader
-pnpm --filter dsh-downloader run bundle
 pnpm exec oxlint -c .oxlintrc.json packages/experimental/dsh-downloader
+
+# 构建 + 产物回填（会先同步源码进检出）
+cd ~/projects/dsh-downloader
+DSH_CHECKOUT=$HOME/projects/deepseek-harness ./scripts/build-bundle.sh
 ```
 
 覆盖率（仓库用 v8，按文件 100%）：
@@ -266,3 +269,28 @@ grep -o "page=rss[^']*" /home/aaevi/projects/deepseek-harness/packages/experimen
 ```
 
 两行必须一致。更彻底的做法是构建后用 `git diff --exit-code bundle/lib` 检查产物是否就是刚构建的那份。
+
+
+## 8. 构建与安装（v0.3，过渡方案）
+
+**版本约束**：只支持 DSH `0.2.2-rc.1`；`bundle/package.json` 的 `engines.dsh` 是 `>=0.2.2-rc.1 <0.2.3`。
+
+**构建**：`scripts/build-bundle.sh` 把源码同步到 `$DSH_CHECKOUT/packages/experimental/dsh-downloader`，在检出里跑 `tsc -b → generate-typert → tsdown`，再把 `lib/` 回填到本仓 `bundle/lib`。连跑两次后 `git status --porcelain bundle/` 必须为空。
+
+**为什么仍依赖检出**：Typert 生成器只把**工作区内的** `@deepseek-ai/dsh-typert-protocol` 当作协议来源；npm 安装的副本解析到插件自己的 `node_modules` 下，会被当成插件自身的注册，`@Remote` 全部识别不到，生成器静默产出 0 个产物（issue #11 的 S1 结论）。因此 B1「不依赖 monorepo 构建」未达成，标 `NOT_VERIFIED`。
+
+**安装/验收**：必须用**不含该包的干净宿主**，否则 `dsh plugin add` 会先按安装锚点解析包名，命中检出里的 workspace 链接（那份源码 manifest 没有 `dsh.bundle`），于是只装成普通依赖、不建层。
+
+```sh
+cd ~/projects/dsh-downloader/worktree-11   # 或任意工作树
+npm install --prefix .host @deepseek-ai/dsh@0.2.2-rc.1
+DSH_HOME=$PWD/.dsh-home-clean .host/node_modules/.bin/dsh \
+  --profile wdemo --from-default-profile web
+DSH_HOME=$PWD/.dsh-home-clean .host/node_modules/.bin/dsh \
+  plugin --profile wdemo add ./bundle
+DSH_HOME=$PWD/.dsh-home-clean .host/node_modules/.bin/dsh --profile wdemo --port 3099 --no-open
+```
+
+**无头验收**：首启的 “Get started” 对话框会让 `#root` 变 `inert`，用 `Escape` 关闭后再点侧栏 `aria-label="Downloader"`。面板出现候选（`download.list`）→ 点候选出现 `Submitted: <gid>`（`download.add`）→ `$DSH_HOME/downloader/submissions.json` 落在原路径、保持 `0600`。
+
+**未验证**：三个工具在真实 agent 会话中的可调用性（需要模型）、Desktop 安装、仓库级 `verify.sh`（属独立 Contract）。

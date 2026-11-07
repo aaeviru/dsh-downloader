@@ -14,6 +14,7 @@ kind: "package-reference"
 ## 目录
 
 - [使用本包](#use-this-package)
+- [安装到 profile](#install-into-a-profile)
 - [理解实现](#understand-the-implementation)
 - [进一步探索](#further-exploration)
 - [模型体验](#model-experience)
@@ -38,6 +39,33 @@ kind: "package-reference"
 搜索和刷新只发现候选，绝不提交下载。刷新仅请求一次最后执行的查询，返回 `candidates`、`discovered`、`known` 和 `unsubmittable`；失败时保留先前的候选和提交记录。面板刷新时忽略尚未执行的搜索草稿。点击单个候选行或调用 `download_add` 才会下载；重复提交返回已记录的 GID。
 
 面板是可选的：它消费 `download` 命名空间，在 `sidebar.panellist` 占一个图标，并在 `main` 增加一个页面。
+
+-----
+
+<a id="install-into-a-profile"></a>
+## 安装到 profile
+
+本包以 DSH bundle 形式安装，只支持 DSH `0.2.2-rc.1`；`engines.dsh` 会拒绝其他版本。从内置模板建一个 Web profile，安装 bundle 目录或其打包出的 tarball，然后启动：
+
+```sh
+dsh --profile demo --from-default-profile web
+dsh plugin --profile demo add ./bundle
+dsh --profile demo
+```
+
+profile 自己的 `cordis.patch.yml` 可以按 id 覆盖任意行。补丁替换整份 `config`，所以要把该行需要的键全部重述：
+
+```yaml
+- id: downloader
+  config:
+    endpoint: http://10.0.0.7:8082/jsonrpc
+    tokenRef: ARIA2_TOKEN
+    timeoutMs: 15000
+    storePath: downloader/submissions.json
+    feedUrl: https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2
+```
+
+`dsh plugin --profile demo remove @deepseek-ai/dsh-experimental-downloader` 会移除该层并保留 `$DSH_HOME/downloader/submissions.json`。如果某个 DSH 检出仍把本包挂在 `packages/` 下，包名会先解析到那份源码，请把 bundle 装到没有该挂载的宿主。
 
 -----
 
@@ -98,7 +126,8 @@ RSS 的字节数优先取 `nyaa:size`；没有时用 torrent enclosure 里纯数
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **默认产品不挂载。** Web bundle 按规则拒绝实验包；本包通过测试 overlay 或显式的 profile 行加载。
+- **默认产品不含本包。** 通过 profile bundle 安装，或用测试 overlay 挂载源码；随产品发布的 Web 组合不包含它。
+- **构建需要 DSH 检出。** Typert 生成只在 workspace 内识别协议包，所以 `scripts/build-bundle.sh` 通过 `$DSH_CHECKOUT` 构建；不依赖检出的构建在 #11 中仍标为 `NOT_VERIFIED`。
 - **发现范围就是源本身。** 关键词搜索只是重新划定配置的 RSS 源，没有独立搜索索引，因此关键词只能找到该源当前提供的内容。
 - **每个 profile 一个存储文件。** 提交记录追加到单个 JSON 文件；两个 harness 进程写同一 profile 时既无锁也无事务协调。
 - **aria2 token 来自外部。** 端点缺少匹配 `tokenRef` 的凭证时返回 aria2 错误码 1，本包以 `Aria2AuthError` 显式失败，不重试。

@@ -29,6 +29,20 @@
     "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
+  "dependencies": {
+    "@deepseek-ai/dsh-credentials": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1",
+    "@deepseek-ai/schemastery": "3.19.0",
+    "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-credentials": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1",
+    "@deepseek-ai/schemastery": "3.19.0"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -42,5 +56,8 @@
     "lib/**/*.d.ts",
     "locale/*.json",
     "cordis.patch.yml"
-  ]
+  ],
+  "engines": {
+    "dsh": ">=0.2.2-rc.1 <0.2.3"
+  }
 }

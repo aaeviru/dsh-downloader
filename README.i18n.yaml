@@ -12,11 +12,14 @@
   en: 8b5c3788ddb8dc1a
   zh: 718ac04c346aabb1
 /deepseek-ai-dsh-experimental-downloader/table-of-contents:
-  en: d152484eb41ac6b4
-  zh: 09388d293f9be9cb
+  en: 9ed1e477223fe195
+  zh: ba5945b06610da5e
 /deepseek-ai-dsh-experimental-downloader/use-this-package:
-  en: c9a13f524fb0ef5f
-  zh: 639387e8c5288e67
+  en: f1347c747967905f
+  zh: 00b4a5c2106122fe
+/deepseek-ai-dsh-experimental-downloader/install-into-a-profile:
+  en: 466683accbedd9c1
+  zh: 72cac21802281bed
 /deepseek-ai-dsh-experimental-downloader/understand-the-implementation:
   en: 8972c2ce503b7685
   zh: 2a4d32f065b1a48a
@@ -39,8 +42,8 @@
   en: 148b71de05d7052b
   zh: 65d8a74fdfa21a0e
 /deepseek-ai-dsh-experimental-downloader/known-limitations-and-deferred-work:
-  en: 1c247588230a71e5
-  zh: 40e395051427d20f
+  en: e37bf3c89fefb9b6
+  zh: 04594a1a63c77666
 /deepseek-ai-dsh-experimental-downloader/known-limitations-and-deferred-work/dev-note:
   en: e844937ed1ed0198
   zh: 0923867b6650fdeb
