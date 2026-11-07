@@ -2,6 +2,15 @@
 export declare const NS = "downloader";
 /** English panel copy. */
 export declare const en: {
+    readonly savedSearches: "Saved searches";
+    readonly favorites: "Favorites";
+    readonly recent: "Recent searches";
+    readonly favorite: "Favorite";
+    readonly unfavorite: "Unfavorite";
+    readonly deleteSearch: "Delete search";
+    readonly clearHistory: "Clear history";
+    readonly noSavedSearches: "No saved searches yet.";
+    readonly preferencesError: "Unable to save or load search preferences. Retry loading preferences.";
     readonly panel: "Downloader";
     readonly description: "Browse and submit download candidates.";
     readonly refresh: "Refresh";

@@ -173,6 +173,18 @@ window.__ModuleLoader__.load({
 			zod.z.object({ "alreadySubmitting": zod.z.literal(true).readonly() }),
 			zod.z.object({ "unsubmittable": zod.z.literal(true).readonly() })
 		]);
+		let _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema$value ??= zod.z.object({
+			"history": zod.z.array(zod.z.string()).readonly(),
+			"favorites": zod.z.array(zod.z.string()).readonly()
+		});
+		let _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema$value ??= zod.z.object({
+			"history": zod.z.array(zod.z.string()).readonly(),
+			"favorites": zod.z.array(zod.z.string()).readonly()
+		});
 		let _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_list_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value ??= zod.z.array(zod.z.object({
 			"id": zod.z.string().readonly(),
@@ -190,6 +202,18 @@ window.__ModuleLoader__.load({
 			"submittable": zod.z.boolean().readonly(),
 			"dedupeKey": zod.z.string().readonly()
 		}));
+		let _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema$value ??= zod.z.object({
+			"history": zod.z.array(zod.z.string()).readonly(),
+			"favorites": zod.z.array(zod.z.string()).readonly()
+		});
+		let _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema$value ??= zod.z.object({
+			"history": zod.z.array(zod.z.string()).readonly(),
+			"favorites": zod.z.array(zod.z.string()).readonly()
+		});
 		let _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value ??= zod.z.object({
 			"candidates": zod.z.array(zod.z.object({
@@ -249,14 +273,27 @@ window.__ModuleLoader__.load({
 			"key": zod.z.string().readonly(),
 			"gid": zod.z.string().readonly()
 		}));
+		let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema$value ??= zod.z.object({
+			"history": zod.z.array(zod.z.string()).readonly(),
+			"favorites": zod.z.array(zod.z.string()).readonly()
+		});
 		let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value ??= zod.z.string();
 		const TYPERT_REMOTE = createTypertRemoteInfo({
 			package: "@deepseek-ai/dsh-experimental-downloader",
 			methods: {
@@ -290,7 +327,87 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 110,
+						"line": 166,
+						"column": 3
+					}
+				},
+				"download/clearHistory": {
+					service: "download",
+					description: "Clear history while retaining favorites.",
+					invocation: { kind: "direct" },
+					parameters: [],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#Preferences",
+						create: _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema,
+						description: "Committed preferences; persistence failures reject.",
+						jsonSchema: {
+							"type": "object",
+							"properties": {
+								"history": {
+									"type": "array",
+									"items": { "type": "string" }
+								},
+								"favorites": {
+									"type": "array",
+									"items": { "type": "string" }
+								}
+							},
+							"required": ["history", "favorites"],
+							"additionalProperties": true
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 137,
+						"column": 3
+					}
+				},
+				"download/deleteSearch": {
+					service: "download",
+					description: "Delete one history keyword while retaining favorites.",
+					invocation: { kind: "direct" },
+					parameters: [{
+						name: "keyword",
+						description: "Exact keyword, with surrounding whitespace trimmed.",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/deleteSearch:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema,
+							jsonSchema: { "type": "string" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/deleteSearch:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema,
+							jsonSchema: { "type": "string" }
+						}
+					}],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#Preferences",
+						create: _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema,
+						description: "Committed preferences; persistence failures reject.",
+						jsonSchema: {
+							"type": "object",
+							"properties": {
+								"history": {
+									"type": "array",
+									"items": { "type": "string" }
+								},
+								"favorites": {
+									"type": "array",
+									"items": { "type": "string" }
+								}
+							},
+							"required": ["history", "favorites"],
+							"additionalProperties": true
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 128,
 						"column": 3
 					}
 				},
@@ -376,7 +493,87 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 100,
+						"line": 156,
+						"column": 3
+					}
+				},
+				"download/preferences": {
+					service: "download",
+					description: "Read committed search preferences.",
+					invocation: { kind: "direct" },
+					parameters: [],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#Preferences",
+						create: _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema,
+						description: "Committed preferences; persistence failures reject.",
+						jsonSchema: {
+							"type": "object",
+							"properties": {
+								"history": {
+									"type": "array",
+									"items": { "type": "string" }
+								},
+								"favorites": {
+									"type": "array",
+									"items": { "type": "string" }
+								}
+							},
+							"required": ["history", "favorites"],
+							"additionalProperties": true
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 98,
+						"column": 3
+					}
+				},
+				"download/recordSearch": {
+					service: "download",
+					description: "Record a successfully executed search without executing it again.",
+					invocation: { kind: "direct" },
+					parameters: [{
+						name: "keyword",
+						description: "Exact keyword, with surrounding whitespace trimmed.",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/recordSearch:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema,
+							jsonSchema: { "type": "string" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/recordSearch:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema,
+							jsonSchema: { "type": "string" }
+						}
+					}],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#Preferences",
+						create: _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema,
+						description: "Committed preferences; persistence failures reject.",
+						jsonSchema: {
+							"type": "object",
+							"properties": {
+								"history": {
+									"type": "array",
+									"items": { "type": "string" }
+								},
+								"favorites": {
+									"type": "array",
+									"items": { "type": "string" }
+								}
+							},
+							"required": ["history", "favorites"],
+							"additionalProperties": true
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 108,
 						"column": 3
 					}
 				},
@@ -477,7 +674,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 148,
+						"line": 204,
 						"column": 3
 					}
 				},
@@ -511,7 +708,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 129,
+						"line": 185,
 						"column": 3
 					}
 				},
@@ -613,7 +810,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 91,
+						"line": 147,
 						"column": 3
 					}
 				},
@@ -652,7 +849,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 139,
+						"line": 195,
 						"column": 3
 					}
 				},
@@ -681,8 +878,56 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 119,
+						"line": 175,
 						"column": 9
+					}
+				},
+				"download/toggleFavorite": {
+					service: "download",
+					description: "Toggle a saved keyword without searching or downloading.",
+					invocation: { kind: "direct" },
+					parameters: [{
+						name: "keyword",
+						description: "Exact keyword, with surrounding whitespace trimmed.",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/toggleFavorite:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema,
+							jsonSchema: { "type": "string" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/toggleFavorite:keyword",
+							create: _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema,
+							jsonSchema: { "type": "string" }
+						}
+					}],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#Preferences",
+						create: _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema,
+						description: "Committed preferences; persistence failures reject.",
+						jsonSchema: {
+							"type": "object",
+							"properties": {
+								"history": {
+									"type": "array",
+									"items": { "type": "string" }
+								},
+								"favorites": {
+									"type": "array",
+									"items": { "type": "string" }
+								}
+							},
+							"required": ["history", "favorites"],
+							"additionalProperties": true
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 118,
+						"column": 3
 					}
 				}
 			}
@@ -698,7 +943,7 @@ window.__ModuleLoader__.load({
 				month: "numeric",
 				day: "numeric"
 			}).formatToParts(new Date(publishedAt));
-			const value = (type) => parts.find((part) => part.type === type)?.value ?? "";
+			const value = (type) => parts.find((part) => part.type === type).value;
 			return `${value("year")}年${value("month")}月${value("day")}日`;
 		}
 		/** Read one sortable value; missing values always sort last. */
@@ -835,6 +1080,41 @@ window.__ModuleLoader__.load({
 				descending: true
 			});
 			const [keyword, setKeyword] = (0, react.useState)("");
+			const [preferences, setPreferences] = (0, react.useState)({
+				history: [],
+				favorites: []
+			});
+			const [preferencesError, setPreferencesError] = (0, react.useState)(false);
+			const [preferencesPending, setPreferencesPending] = (0, react.useState)(true);
+			const [expanded, setExpanded] = (0, react.useState)(false);
+			const preferenceArea = (0, react.useRef)(null);
+			const preferenceButton = (0, react.useRef)(null);
+			const changePreferences = (0, react.useCallback)(async (operation) => {
+				setPreferencesPending(true);
+				try {
+					const result = await operation();
+					if (!result.ok) throw result.error;
+					setPreferences(result.value);
+					setPreferencesError(false);
+				} catch {
+					setPreferencesError(true);
+				} finally {
+					setPreferencesPending(false);
+				}
+			}, []);
+			(0, react.useEffect)(() => {
+				changePreferences(() => download.preferences());
+			}, [download, changePreferences]);
+			(0, react.useEffect)(() => {
+				if (!expanded) return;
+				const outside = (event) => {
+					if (event.target instanceof Node && !preferenceArea.current?.contains(event.target)) setExpanded(false);
+				};
+				document.addEventListener("pointerdown", outside);
+				return () => {
+					document.removeEventListener("pointerdown", outside);
+				};
+			}, [expanded]);
 			const lastExecutedKeyword = (0, react.useRef)(void 0);
 			const [candidates, setCandidates] = (0, react.useState)([]);
 			const [page, setPage] = (0, react.useState)(1);
@@ -861,8 +1141,10 @@ window.__ModuleLoader__.load({
 						setState({ kind: "ready" });
 					} else {
 						const result = refresh ? await download.search(lastExecutedKeyword.current) : await download.list();
-						if (result.ok) setCandidates(result.value);
-						setState(result.ok ? { kind: "ready" } : { kind: "error" });
+						if (result.ok) {
+							setCandidates(result.value);
+							setState({ kind: "ready" });
+						} else setState({ kind: "error" });
 					}
 					setPage(1);
 				} catch {
@@ -873,13 +1155,18 @@ window.__ModuleLoader__.load({
 				load(false);
 			}, [load]);
 			const runSearch = (0, react.useCallback)(async () => {
+				const executed = keyword.trim();
+				if (!executed || state.kind === "loading") return;
 				setState({ kind: "loading" });
 				setPage(1);
-				lastExecutedKeyword.current = keyword;
+				lastExecutedKeyword.current = executed;
 				try {
 					await refreshSubmissions();
-					const result = await download.search(keyword);
-					if (result.ok) setCandidates(result.value);
+					const result = await download.search(executed);
+					if (result.ok) {
+						setCandidates(result.value);
+						await changePreferences(() => download.recordSearch(executed));
+					}
 					setState(result.ok ? { kind: "ready" } : { kind: "error" });
 				} catch {
 					setState({ kind: "error" });
@@ -887,7 +1174,9 @@ window.__ModuleLoader__.load({
 			}, [
 				download,
 				keyword,
-				refreshSubmissions
+				refreshSubmissions,
+				changePreferences,
+				state.kind
 			]);
 			const ordered = order(candidates, sort);
 			const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
@@ -905,43 +1194,149 @@ window.__ModuleLoader__.load({
 						children: t("description")
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						style: {
-							display: "flex",
-							gap: 8,
-							alignItems: "center",
-							margin: "12px 0"
+						ref: preferenceArea,
+						onKeyDown: (event) => {
+							if (event.key === "Escape") {
+								setExpanded(false);
+								preferenceButton.current?.focus();
+							}
 						},
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							style: {
+								display: "flex",
+								flexWrap: "wrap",
+								gap: 8,
+								alignItems: "center",
+								margin: "12px 0"
+							},
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+									"aria-label": t("search"),
+									value: keyword,
+									placeholder: t("search"),
+									onChange: (event) => {
+										setKeyword(event.target.value);
+									},
+									onKeyDown: (event) => {
+										if (event.key === "Enter") runSearch();
+									},
+									style: {
+										padding: "6px 8px",
+										minWidth: 220
+									}
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: state.kind === "loading",
+									onClick: () => {
+										runSearch();
+									},
+									children: t("search")
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: state.kind === "loading",
+									onClick: () => {
+										load(true);
+									},
+									children: t("refresh")
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									ref: preferenceButton,
+									type: "button",
+									"aria-expanded": expanded,
+									onClick: () => {
+										setExpanded((value) => !value);
+									},
+									children: t("savedSearches")
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: !keyword.trim() || preferencesPending,
+									"aria-pressed": preferences.favorites.includes(keyword.trim()),
+									onClick: () => {
+										changePreferences(() => download.toggleFavorite(keyword.trim()));
+									},
+									children: t(preferences.favorites.includes(keyword.trim()) ? "unfavorite" : "favorite")
+								})
+							]
+						}), expanded && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							style: {
+								padding: 12,
+								border: "1px solid var(--dsw-alias-border-l2)",
+								maxHeight: 300,
+								overflowY: "auto"
+							},
+							children: [
+								["favorites", "history"].map((group) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+									"aria-label": t(group === "history" ? "recent" : "favorites"),
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+										style: {
+											fontSize: "inherit",
+											fontWeight: 500
+										},
+										children: t(group === "history" ? "recent" : "favorites")
+									}), preferences[group].map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										style: {
+											display: "flex",
+											flexWrap: "wrap",
+											gap: 8
+										},
+										children: [
+											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+												type: "button",
+												style: { overflowWrap: "anywhere" },
+												onClick: () => {
+													setKeyword(item);
+													setExpanded(false);
+												},
+												children: item
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+												type: "button",
+												disabled: preferencesPending,
+												"aria-label": `${t(preferences.favorites.includes(item) ? "unfavorite" : "favorite")} ${item}`,
+												onClick: () => {
+													changePreferences(() => download.toggleFavorite(item));
+												},
+												children: t(preferences.favorites.includes(item) ? "unfavorite" : "favorite")
+											}),
+											group === "history" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+												type: "button",
+												disabled: preferencesPending,
+												"aria-label": `${t("deleteSearch")} ${item}`,
+												onClick: () => {
+													changePreferences(() => download.deleteSearch(item));
+												},
+												children: t("deleteSearch")
+											})
+										]
+									}, item))]
+								}, group)),
+								preferences.history.length === 0 && preferences.favorites.length === 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("noSavedSearches") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: preferencesPending || preferences.history.length === 0,
+									onClick: () => {
+										changePreferences(() => download.clearHistory());
+									},
+									children: t("clearHistory")
+								})
+							]
+						})]
+					}),
+					preferencesError && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						role: "alert",
 						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-								"aria-label": t("search"),
-								value: keyword,
-								placeholder: t("search"),
-								onChange: (event) => {
-									setKeyword(event.target.value);
-								},
-								onKeyDown: (event) => {
-									if (event.key === "Enter") runSearch();
-								},
-								style: {
-									padding: "6px 8px",
-									minWidth: 220
-								}
-							}),
+							t("preferencesError"),
+							" ",
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								disabled: state.kind === "loading",
+								disabled: preferencesPending,
 								onClick: () => {
-									runSearch();
+									changePreferences(() => download.preferences());
 								},
-								children: t("search")
-							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-								type: "button",
-								disabled: state.kind === "loading",
-								onClick: () => {
-									load(true);
-								},
-								children: t("refresh")
+								children: t("retry")
 							})
 						]
 					}),
@@ -1080,6 +1475,15 @@ window.__ModuleLoader__.load({
 		const NS = "downloader";
 		/** English panel copy. */
 		const en = {
+			savedSearches: "Saved searches",
+			favorites: "Favorites",
+			recent: "Recent searches",
+			favorite: "Favorite",
+			unfavorite: "Unfavorite",
+			deleteSearch: "Delete search",
+			clearHistory: "Clear history",
+			noSavedSearches: "No saved searches yet.",
+			preferencesError: "Unable to save or load search preferences. Retry loading preferences.",
 			panel: "Downloader",
 			description: "Browse and submit download candidates.",
 			refresh: "Refresh",
@@ -1106,6 +1510,15 @@ window.__ModuleLoader__.load({
 		};
 		/** Chinese panel copy. */
 		const zh = {
+			savedSearches: "已保存的搜索",
+			favorites: "收藏",
+			recent: "最近搜索",
+			favorite: "收藏",
+			unfavorite: "取消收藏",
+			deleteSearch: "删除搜索",
+			clearHistory: "清空历史",
+			noSavedSearches: "暂无已保存的搜索",
+			preferencesError: "无法保存或加载搜索偏好，请重试加载",
 			panel: "下载器",
 			description: "浏览并提交下载候选项。",
 			refresh: "刷新",

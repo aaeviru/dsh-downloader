@@ -1,3 +1,4 @@
+import type { Preferences, PreferencesStore } from './types.ts'
 import { dedupeCandidates } from './candidate.ts'
 import type { Candidate } from './candidate.ts'
 import { createDownloadCoordinator } from './coordinator.ts'
@@ -25,6 +26,16 @@ export class UnknownCandidateError extends Error {
 
 /** Caches discovered candidates for identifier-based submission; search replaces the cache and refresh reloads it. */
 export interface DownloadService {
+  /** Read committed keywords without discovery or submission. */
+  preferences(): Promise<Preferences>
+  /** Record a successfully executed keyword; blank input is ignored. */
+  recordSearch(keyword: string): Promise<Preferences>
+  /** Toggle an exact keyword without executing it. */
+  toggleFavorite(keyword: string): Promise<Preferences>
+  /** Remove one history keyword without changing favorites. */
+  deleteSearch(keyword: string): Promise<Preferences>
+  /** Remove history while retaining favorites. */
+  clearHistory(): Promise<Preferences>
   search(keyword: string): Promise<readonly Candidate[]>
   listCandidates(): Promise<readonly Candidate[]>
   add(candidateId: string): Promise<SubmitResult>
@@ -54,6 +65,7 @@ export function createDownloadService(deps: {
   /** Build a source scoped to one search keyword; defaults to the configured source. */
   readonly makeSource?: (keyword: string) => Source
   readonly downloader: Downloader
+  readonly preferences: PreferencesStore
   readonly store: SubmitStore
 }): DownloadService {
   const coordinator = createDownloadCoordinator(deps)
@@ -66,7 +78,14 @@ export function createDownloadService(deps: {
   }
 
   return {
+    async preferences() { return deps.preferences.value },
+    recordSearch: keyword => deps.preferences.addSearch(keyword),
+    toggleFavorite: keyword => deps.preferences.toggleFavorite(keyword),
+    deleteSearch: keyword => deps.preferences.deleteSearch(keyword),
+    clearHistory: () => deps.preferences.clearHistory(),
     async search(keyword) {
+      keyword = keyword.trim()
+      if (!keyword) return []
       source = deps.makeSource ? deps.makeSource(keyword) : deps.source
       return discover()
     },

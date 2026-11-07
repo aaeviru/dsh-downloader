@@ -2,6 +2,15 @@
 export const NS = 'downloader';
 /** English panel copy. */
 export const en = {
+    savedSearches: 'Saved searches',
+    favorites: 'Favorites',
+    recent: 'Recent searches',
+    favorite: 'Favorite',
+    unfavorite: 'Unfavorite',
+    deleteSearch: 'Delete search',
+    clearHistory: 'Clear history',
+    noSavedSearches: 'No saved searches yet.',
+    preferencesError: 'Unable to save or load search preferences. Retry loading preferences.',
     panel: 'Downloader',
     description: 'Browse and submit download candidates.',
     refresh: 'Refresh',
@@ -28,6 +37,15 @@ export const en = {
 };
 /** Chinese panel copy. */
 export const zh = {
+    savedSearches: '已保存的搜索',
+    favorites: '收藏',
+    recent: '最近搜索',
+    favorite: '收藏',
+    unfavorite: '取消收藏',
+    deleteSearch: '删除搜索',
+    clearHistory: '清空历史',
+    noSavedSearches: '暂无已保存的搜索',
+    preferencesError: '无法保存或加载搜索偏好，请重试加载',
     panel: '下载器',
     description: '浏览并提交下载候选项。',
     refresh: '刷新',

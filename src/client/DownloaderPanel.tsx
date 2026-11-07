@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Candidate } from '../types.ts'
+import type { Candidate, Preferences } from '../types.ts'
 import type { DownloaderKey } from './locales.ts'
 import type { DownloadNamespace, SubmitResult } from './namespace.ts'
 
@@ -11,7 +11,7 @@ function formatPublished(publishedAt: string | null): string {
   if (publishedAt === null) return '—'
   const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric' })
     .formatToParts(new Date(publishedAt))
-  const value = (type: string): string => parts.find(part => part.type === type)?.value ?? ''
+  const value = (type: string): string => parts.find(part => part.type === type)!.value
   return `${value('year')}年${value('month')}月${value('day')}日`
 }
 
@@ -112,6 +112,34 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [sort, setSort] = useState<{ key: SortKey; descending: boolean }>({ key: 'published', descending: true })
   const [keyword, setKeyword] = useState('')
+  const [preferences, setPreferences] = useState<Preferences>({ history: [], favorites: [] })
+  const [preferencesError, setPreferencesError] = useState(false)
+  const [preferencesPending, setPreferencesPending] = useState(true)
+  const [expanded, setExpanded] = useState(false)
+  const preferenceArea = useRef<HTMLDivElement>(null)
+  const preferenceButton = useRef<HTMLButtonElement>(null)
+  const changePreferences = useCallback(async (operation: () => ReturnType<DownloadNamespace['preferences']>) => {
+    setPreferencesPending(true)
+    try {
+      const result = await operation()
+      if (!result.ok) throw result.error
+      setPreferences(result.value)
+      setPreferencesError(false)
+    } catch {
+      setPreferencesError(true)
+    } finally {
+      setPreferencesPending(false)
+    }
+  }, [])
+  useEffect(() => { void changePreferences(() => download.preferences()) }, [download, changePreferences])
+  useEffect(() => {
+    if (!expanded) return
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !preferenceArea.current?.contains(event.target)) setExpanded(false)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => { document.removeEventListener('pointerdown', outside) }
+  }, [expanded])
   const lastExecutedKeyword = useRef<string | undefined>(undefined)
   const [candidates, setCandidates] = useState<readonly Candidate[]>([])
   const [page, setPage] = useState(1)
@@ -137,8 +165,12 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
         const result = refresh
           ? await download.search(lastExecutedKeyword.current!)
           : await download.list()
-        if (result.ok) setCandidates(result.value)
-        setState(result.ok ? { kind: 'ready' } : { kind: 'error' })
+        if (result.ok) {
+          setCandidates(result.value)
+          setState({ kind: 'ready' })
+        } else {
+          setState({ kind: 'error' })
+        }
       }
       setPage(1)
     } catch {
@@ -147,18 +179,23 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
   }, [download, refreshSubmissions])
   useEffect(() => { void load(false) }, [load])
   const runSearch = useCallback(async () => {
+    const executed = keyword.trim()
+    if (!executed || state.kind === 'loading') return
     setState({ kind: 'loading' })
     setPage(1)
-    lastExecutedKeyword.current = keyword
+    lastExecutedKeyword.current = executed
     try {
       await refreshSubmissions()
-      const result = await download.search(keyword)
-      if (result.ok) setCandidates(result.value)
+      const result = await download.search(executed)
+      if (result.ok) {
+        setCandidates(result.value)
+        await changePreferences(() => download.recordSearch(executed))
+      }
       setState(result.ok ? { kind: 'ready' } : { kind: 'error' })
     } catch {
       setState({ kind: 'error' })
     }
-  }, [download, keyword, refreshSubmissions])
+  }, [download, keyword, refreshSubmissions, changePreferences, state.kind])
   const ordered = order(candidates, sort)
   const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize))
   const visible = ordered.slice((page - 1) * pageSize, page * pageSize)
@@ -166,7 +203,10 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
     <section style={{ padding: 24, color: 'var(--dsw-alias-label-primary)', background: 'var(--dsw-alias-bg-base)' }}>
       <h1>{t('panel')}</h1>
       <p style={{ color: 'var(--dsw-alias-label-secondary)' }}>{t('description')}</p>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '12px 0' }}>
+      <div ref={preferenceArea} onKeyDown={event => {
+        if (event.key === 'Escape') { setExpanded(false); preferenceButton.current?.focus() }
+      }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', margin: '12px 0' }}>
         <input
           aria-label={t('search')}
           value={keyword}
@@ -177,7 +217,26 @@ export function DownloaderPanel({ t, download }: { t: Translate; download: Downl
         />
         <button type="button" disabled={state.kind === 'loading'} onClick={() => { void runSearch() }}>{t('search')}</button>
         <button type="button" disabled={state.kind === 'loading'} onClick={() => { void load(true) }}>{t('refresh')}</button>
+      <button ref={preferenceButton} type="button" aria-expanded={expanded} onClick={() => { setExpanded(value => !value) }}>{t('savedSearches')}</button>
+      <button type="button" disabled={!keyword.trim() || preferencesPending} aria-pressed={preferences.favorites.includes(keyword.trim())}
+        onClick={() => { void changePreferences(() => download.toggleFavorite(keyword.trim())) }}>{t(preferences.favorites.includes(keyword.trim()) ? 'unfavorite' : 'favorite')}</button>
       </div>
+      {expanded && <div style={{ padding: 12, border: '1px solid var(--dsw-alias-border-l2)', maxHeight: 300, overflowY: 'auto' }}>
+        {(['favorites', 'history'] as const).map(group => <section key={group} aria-label={t(group === 'history' ? 'recent' : 'favorites')}>
+          <h2 style={{ fontSize: 'inherit', fontWeight: 500 }}>{t(group === 'history' ? 'recent' : 'favorites')}</h2>
+          {preferences[group].map(item => <div key={item} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <button type="button" style={{ overflowWrap: 'anywhere' }} onClick={() => { setKeyword(item); setExpanded(false) }}>{item}</button>
+            <button type="button" disabled={preferencesPending} aria-label={`${t(preferences.favorites.includes(item) ? 'unfavorite' : 'favorite')} ${item}`}
+              onClick={() => { void changePreferences(() => download.toggleFavorite(item)) }}>{t(preferences.favorites.includes(item) ? 'unfavorite' : 'favorite')}</button>
+            {group === 'history' && <button type="button" disabled={preferencesPending} aria-label={`${t('deleteSearch')} ${item}`}
+              onClick={() => { void changePreferences(() => download.deleteSearch(item)) }}>{t('deleteSearch')}</button>}
+          </div>)}
+        </section>)}
+        {preferences.history.length === 0 && preferences.favorites.length === 0 && <p>{t('noSavedSearches')}</p>}
+        <button type="button" disabled={preferencesPending || preferences.history.length === 0} onClick={() => { void changePreferences(() => download.clearHistory()) }}>{t('clearHistory')}</button>
+      </div>}
+      </div>
+      {preferencesError && <div role="alert">{t('preferencesError')} <button type="button" disabled={preferencesPending} onClick={() => { void changePreferences(() => download.preferences()) }}>{t('retry')}</button></div>}
       {state.kind === 'loading' && <p role="status">{t('loading')}</p>}
       {state.kind === 'error' && <div role="alert"><p>{t('error')}</p><button type="button" onClick={() => { void load(true) }}>{t('retry')}</button></div>}
       {(state.kind === 'ready' || candidates.length > 0) && (candidates.length === 0 ? <p>{t('empty')}</p> : (

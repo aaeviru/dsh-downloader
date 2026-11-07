@@ -1,11 +1,16 @@
+import { openPreferencesStore } from '../src/preferences.ts'
 import type { Context } from '@deepseek-ai/cordis'
-import { afterEach, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { DownloadRemote } from '../src/remote.ts'
 import { createDownloadService } from '../src/service.ts'
 import { createPersistentSubmitStore } from '../src/store.ts'
 
 vi.mock('../src/service.ts', { spy: true })
 vi.mock('../src/store.ts', { spy: true })
+vi.mock('../src/preferences.ts', { spy: true })
+const prefs = { history: [], favorites: [] }
+const preferenceMethods = { preferences: vi.fn(async () => prefs), recordSearch: vi.fn(async (_keyword: string) => prefs), toggleFavorite: vi.fn(async (_keyword: string) => prefs), deleteSearch: vi.fn(async (_keyword: string) => prefs), clearHistory: vi.fn(async () => prefs) }
+beforeEach(() => { vi.mocked(openPreferencesStore).mockResolvedValue({ value: prefs, addSearch: async () => prefs, toggleFavorite: async () => prefs, deleteSearch: async () => prefs, clearHistory: async () => prefs, flush: async () => {} }) })
 afterEach(() => { vi.restoreAllMocks() })
 
 it('registers the download namespace and delegates every method to the shared service after hydration', async () => {
@@ -14,6 +19,7 @@ it('registers the download namespace and delegates every method to the shared se
     has: () => false, list: () => [], record: () => {}, flush,
   })
   const service = {
+    ...preferenceMethods,
     submissions: vi.fn(() => [{ key: 'key', gid: 'old' }]),
     resubmit: vi.fn(async (_id: string) => ({ gid: 'new' })),
     search: vi.fn(async (_keyword: string) => []),
@@ -36,6 +42,13 @@ it('registers the download namespace and delegates every method to the shared se
   expect(DownloadRemote.inject).toEqual(['typert', 'credentials'])
   expect(provide).toHaveBeenCalledWith('download', remote, undefined)
   expect(remote.typertRemote.namespace).toBe('download')
+  for (const name of ['preferences', 'recordSearch', 'toggleFavorite', 'deleteSearch', 'clearHistory'] as const) {
+    expect(await remote[name]('term')).toEqual(prefs)
+    expect(preferenceMethods[name]).toHaveBeenCalled()
+  }
+  expect(shared.search).not.toHaveBeenCalled()
+  expect(shared.add).not.toHaveBeenCalled()
+  expect(shared.resubmit).not.toHaveBeenCalled()
   expect(await remote.search('term')).toEqual([])
   expect(await remote.list()).toEqual([])
   expect(await remote.refresh()).toEqual({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 })
@@ -59,6 +72,7 @@ it('registers the download namespace and delegates every method to the shared se
 it('hands the service a keyword-scoped source factory', async () => {
   vi.mocked(createPersistentSubmitStore).mockResolvedValue({ has: () => false, list: () => [], record: () => {}, flush: async () => {} })
   vi.mocked(createDownloadService).mockReturnValue({
+    ...preferenceMethods,
     submissions: () => [], resubmit: async () => ({ gid: 'g' }),
     search: async () => [], listCandidates: async () => [], add: async () => ({ gid: 'g' }),
     status: async () => ({ state: 'active' }), refresh: async () => ({ candidates: [], discovered: 0, known: 0, unsubmittable: 0 }),

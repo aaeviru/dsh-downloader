@@ -15,6 +15,18 @@ const _deepseek_ai_dsh_experimental_downloader_download_add_result$schema = () =
 }), z.object({
   'unsubmittable': z.literal(true).readonly(),
 })]))
+let _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema$value ??= z.object({
+  'history': z.array(z.string()).readonly(),
+  'favorites': z.array(z.string()).readonly(),
+}))
+let _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema$value ??= z.object({
+  'history': z.array(z.string()).readonly(),
+  'favorites': z.array(z.string()).readonly(),
+}))
 let _deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_list_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_list_result$schema$value ??= z.array(z.object({
   'id': z.string().readonly(),
@@ -32,6 +44,18 @@ const _deepseek_ai_dsh_experimental_downloader_download_list_result$schema = () 
   'submittable': z.boolean().readonly(),
   'dedupeKey': z.string().readonly(),
 })))
+let _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema$value ??= z.object({
+  'history': z.array(z.string()).readonly(),
+  'favorites': z.array(z.string()).readonly(),
+}))
+let _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema$value ??= z.object({
+  'history': z.array(z.string()).readonly(),
+  'favorites': z.array(z.string()).readonly(),
+}))
 let _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_refresh_result$schema$value ??= z.object({
   'candidates': z.array(z.object({
@@ -96,14 +120,27 @@ const _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schem
   'key': z.string().readonly(),
   'gid': z.string().readonly(),
 })))
+let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema$value ??= z.object({
+  'history': z.array(z.string()).readonly(),
+  'favorites': z.array(z.string()).readonly(),
+}))
 let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value ??= z.string())
 
 const $remote = createTypertRemoteInfo({
   package: '@deepseek-ai/dsh-experimental-downloader',
@@ -138,7 +175,54 @@ const $remote = createTypertRemoteInfo({
         description: 'the submission outcome, GID, timestamp, and call ID.',
         jsonSchemaError: 'typert tool schema: selected union branches overlap or have no required discriminator',
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":110,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":166,"column":3},
+    },
+    'download/clearHistory': {
+      service: 'download',
+      description: 'Clear history while retaining favorites.',
+      invocation: { kind: 'direct' },
+      parameters: [
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#Preferences',
+        create: _deepseek_ai_dsh_experimental_downloader_download_clearHistory_result$schema,
+        description: 'Committed preferences; persistence failures reject.',
+        jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":137,"column":3},
+    },
+    'download/deleteSearch': {
+      service: 'download',
+      description: 'Delete one history keyword while retaining favorites.',
+      invocation: { kind: 'direct' },
+      parameters: [
+        {
+          name: 'keyword',
+          description: 'Exact keyword, with surrounding whitespace trimmed.',
+          source: 'json',
+          codec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/deleteSearch:keyword',
+            create: _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0$schema,
+            jsonSchema: {"type":"string"},
+          },
+          strictCodec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/deleteSearch:keyword',
+            create: _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_parameter_0_strict$schema,
+            jsonSchema: {"type":"string"},
+          },
+        },
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#Preferences',
+        create: _deepseek_ai_dsh_experimental_downloader_download_deleteSearch_result$schema,
+        description: 'Committed preferences; persistence failures reject.',
+        jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":128,"column":3},
     },
     'download/list': {
       service: 'download',
@@ -153,7 +237,54 @@ const $remote = createTypertRemoteInfo({
         description: 'the current candidate set.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":100,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":156,"column":3},
+    },
+    'download/preferences': {
+      service: 'download',
+      description: 'Read committed search preferences.',
+      invocation: { kind: 'direct' },
+      parameters: [
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#Preferences',
+        create: _deepseek_ai_dsh_experimental_downloader_download_preferences_result$schema,
+        description: 'Committed preferences; persistence failures reject.',
+        jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":98,"column":3},
+    },
+    'download/recordSearch': {
+      service: 'download',
+      description: 'Record a successfully executed search without executing it again.',
+      invocation: { kind: 'direct' },
+      parameters: [
+        {
+          name: 'keyword',
+          description: 'Exact keyword, with surrounding whitespace trimmed.',
+          source: 'json',
+          codec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/recordSearch:keyword',
+            create: _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0$schema,
+            jsonSchema: {"type":"string"},
+          },
+          strictCodec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/recordSearch:keyword',
+            create: _deepseek_ai_dsh_experimental_downloader_download_recordSearch_parameter_0_strict$schema,
+            jsonSchema: {"type":"string"},
+          },
+        },
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#Preferences',
+        create: _deepseek_ai_dsh_experimental_downloader_download_recordSearch_result$schema,
+        description: 'Committed preferences; persistence failures reject.',
+        jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":108,"column":3},
     },
     'download/refresh': {
       service: 'download',
@@ -168,7 +299,7 @@ const $remote = createTypertRemoteInfo({
         description: 'the candidates and discovery counts; source failure preserves the previous cache.',
         jsonSchema: {"type":"object","properties":{"candidates":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},"discovered":{"type":"number"},"known":{"type":"number"},"unsubmittable":{"type":"number"}},"required":["candidates","discovered","known","unsubmittable"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":148,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":204,"column":3},
     },
     'download/resubmit': {
       service: 'download',
@@ -200,7 +331,7 @@ const $remote = createTypertRemoteInfo({
         description: 'The new gid or a pending/unsupported outcome.',
         jsonSchemaError: 'typert tool schema: selected union branches overlap or have no required discriminator',
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":129,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":185,"column":3},
     },
     'download/search': {
       service: 'download',
@@ -232,7 +363,7 @@ const $remote = createTypertRemoteInfo({
         description: 'the matching candidates after deduplication.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":91,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":147,"column":3},
     },
     'download/status': {
       service: 'download',
@@ -264,7 +395,7 @@ const $remote = createTypertRemoteInfo({
         description: 'the aria2-reported state for that GID.',
         jsonSchema: {"type":"object","properties":{"state":{"type":"string"}},"required":["state"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":139,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":195,"column":3},
     },
     'download/submissions': {
       service: 'download',
@@ -279,7 +410,39 @@ const $remote = createTypertRemoteInfo({
         description: 'Records keyed by candidate dedupe key.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"key":{"type":"string"},"gid":{"type":"string"}},"required":["key","gid"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":119,"column":9},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":175,"column":9},
+    },
+    'download/toggleFavorite': {
+      service: 'download',
+      description: 'Toggle a saved keyword without searching or downloading.',
+      invocation: { kind: 'direct' },
+      parameters: [
+        {
+          name: 'keyword',
+          description: 'Exact keyword, with surrounding whitespace trimmed.',
+          source: 'json',
+          codec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/toggleFavorite:keyword',
+            create: _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema,
+            jsonSchema: {"type":"string"},
+          },
+          strictCodec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/toggleFavorite:keyword',
+            create: _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema,
+            jsonSchema: {"type":"string"},
+          },
+        },
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#Preferences',
+        create: _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema,
+        description: 'Committed preferences; persistence failures reject.',
+        jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":118,"column":3},
     },
   },
 }, z)

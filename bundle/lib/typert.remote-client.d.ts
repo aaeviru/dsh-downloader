@@ -4,26 +4,36 @@ import type {
   TypertRemoteInfo,
   TypertRemoteMethod,
 } from '@deepseek-ai/dsh-typert-protocol'
-import type { Candidate, RefreshResult, SubmitRecord, SubmitResult } from '@deepseek-ai/dsh-experimental-downloader/types'
+import type { Candidate, Preferences, RefreshResult, SubmitRecord, SubmitResult } from '@deepseek-ai/dsh-experimental-downloader/types'
 
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteNamespace$646f776e6c6f6164 {
     add: (candidateId: string) => Promise<RemoteResult<SubmitResult>>
+    clearHistory: () => Promise<RemoteResult<Preferences>>
+    deleteSearch: (keyword: string) => Promise<RemoteResult<Preferences>>
     list: () => Promise<RemoteResult<readonly Candidate[]>>
+    preferences: () => Promise<RemoteResult<Preferences>>
+    recordSearch: (keyword: string) => Promise<RemoteResult<Preferences>>
     refresh: () => Promise<RemoteResult<RefreshResult>>
     resubmit: (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     search: (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
     status: (gid: string) => Promise<RemoteResult<{ state: string; }>>
     submissions: () => Promise<RemoteResult<readonly SubmitRecord[]>>
+    toggleFavorite: (keyword: string) => Promise<RemoteResult<Preferences>>
   }
   interface TypertRemoteMap {
     'download/add': (candidateId: string) => Promise<RemoteResult<SubmitResult>>
+    'download/clearHistory': () => Promise<RemoteResult<Preferences>>
+    'download/deleteSearch': (keyword: string) => Promise<RemoteResult<Preferences>>
     'download/list': () => Promise<RemoteResult<readonly Candidate[]>>
+    'download/preferences': () => Promise<RemoteResult<Preferences>>
+    'download/recordSearch': (keyword: string) => Promise<RemoteResult<Preferences>>
     'download/refresh': () => Promise<RemoteResult<RefreshResult>>
     'download/resubmit': (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     'download/search': (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
     'download/status': (gid: string) => Promise<RemoteResult<{ state: string; }>>
     'download/submissions': () => Promise<RemoteResult<readonly SubmitRecord[]>>
+    'download/toggleFavorite': (keyword: string) => Promise<RemoteResult<Preferences>>
   }
   interface TypertRemoteNamespaceMap {
     'download': TypertRemoteNamespace$646f776e6c6f6164
@@ -32,12 +42,17 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
 
 export declare const TYPERT_REMOTE: TypertRemoteInfo<{
   readonly 'download/add': TypertRemoteMethod<{ readonly 'candidateId': string }, SubmitResult>
+  readonly 'download/clearHistory': TypertRemoteMethod<{  }, Preferences>
+  readonly 'download/deleteSearch': TypertRemoteMethod<{ readonly 'keyword': string }, Preferences>
   readonly 'download/list': TypertRemoteMethod<{  }, readonly Candidate[]>
+  readonly 'download/preferences': TypertRemoteMethod<{  }, Preferences>
+  readonly 'download/recordSearch': TypertRemoteMethod<{ readonly 'keyword': string }, Preferences>
   readonly 'download/refresh': TypertRemoteMethod<{  }, RefreshResult>
   readonly 'download/resubmit': TypertRemoteMethod<{ readonly 'candidateId': string }, SubmitResult>
   readonly 'download/search': TypertRemoteMethod<{ readonly 'keyword': string }, readonly Candidate[]>
   readonly 'download/status': TypertRemoteMethod<{ readonly 'gid': string }, { state: string; }>
   readonly 'download/submissions': TypertRemoteMethod<{  }, readonly SubmitRecord[]>
+  readonly 'download/toggleFavorite': TypertRemoteMethod<{ readonly 'keyword': string }, Preferences>
 }>
 export default TYPERT_REMOTE
 //# sourceMappingURL=typert.remote-client.d.ts.map

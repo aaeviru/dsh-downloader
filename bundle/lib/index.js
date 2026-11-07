@@ -1,11 +1,113 @@
+import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
 import { credentialRef } from "@deepseek-ai/dsh-credentials";
 import { Remote, TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
 import z from "@deepseek-ai/schemastery";
-import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
 import { defineTool } from "@deepseek-ai/dsh-tools";
+//#region lib/types/preferences.js
+/** Host-owned search keywords, persisted independently from download submissions. */
+/**
+* Create an atomic, owner-readable JSON backend.
+* @param path - Destination; missing files load empty and malformed files reject.
+* @returns The file backend; failed writes reject and temporary files are removed.
+*/
+function createJsonFilePreferencesBackend(path) {
+	return {
+		async load() {
+			let contents;
+			try {
+				contents = await readFile(path, "utf8");
+			} catch (error) {
+				if (error.code === "ENOENT") return {
+					history: [],
+					favorites: []
+				};
+				throw error;
+			}
+			const value = JSON.parse(contents);
+			const keywords = (items) => Array.isArray(items) && items.every((item) => typeof item === "string" && item.length > 0 && item.trim() === item) && new Set(items).size === items.length;
+			if (typeof value !== "object" || value === null || !("history" in value) || !("favorites" in value) || !keywords(value.history) || !keywords(value.favorites) || value.history.length > 50) throw new Error(`Invalid preferences at ${path}: expected unique history and favorite keywords`);
+			return {
+				history: value.history,
+				favorites: value.favorites
+			};
+		},
+		async save(value) {
+			await mkdir(dirname(path), { recursive: true });
+			const temporary = `${path}.${randomUUID()}.tmp`;
+			try {
+				await writeFile(temporary, JSON.stringify(value), {
+					mode: 384,
+					flag: "wx"
+				});
+				await rename(temporary, path);
+			} finally {
+				await rm(temporary, { force: true });
+			}
+		}
+	};
+}
+/**
+* Hydrate preferences without writing during load.
+* @param backend - Durable storage; failed mutations leave the committed value intact.
+* @returns A serialized store; mutations and flush reject on persistence failure.
+*/
+async function openPreferencesStore(backend) {
+	const freeze = (value) => Object.freeze({
+		history: Object.freeze([...value.history]),
+		favorites: Object.freeze([...value.favorites])
+	});
+	let value = freeze(await backend.load());
+	let pending = Promise.resolve();
+	function update(change) {
+		const operation = pending.catch(() => {}).then(async () => {
+			const next = freeze(change(value));
+			await backend.save(next);
+			value = next;
+			return value;
+		});
+		pending = operation.then(() => {});
+		pending.catch(() => {});
+		return operation;
+	}
+	return {
+		get value() {
+			return value;
+		},
+		addSearch(keyword) {
+			const key = keyword.trim();
+			return key ? update((current) => ({
+				...current,
+				history: [key, ...current.history.filter((item) => item !== key)].slice(0, 50)
+			})) : Promise.resolve(value);
+		},
+		toggleFavorite(keyword) {
+			const key = keyword.trim();
+			return key ? update((current) => ({
+				...current,
+				favorites: current.favorites.includes(key) ? current.favorites.filter((item) => item !== key) : [key, ...current.favorites]
+			})) : Promise.resolve(value);
+		},
+		deleteSearch(keyword) {
+			return update((current) => ({
+				...current,
+				history: current.history.filter((item) => item !== keyword.trim())
+			}));
+		},
+		clearHistory() {
+			return update((current) => ({
+				...current,
+				history: []
+			}));
+		},
+		flush() {
+			return pending;
+		}
+	};
+}
+//#endregion
 //#region lib/types/config.js
 /** Downloader mount settings shared by the plugin entry and the Remote service. */
 /** Parse mount settings and supply defaults for omitted fields. */
@@ -230,7 +332,16 @@ function createDownloadService(deps) {
 		return cache;
 	}
 	return {
+		async preferences() {
+			return deps.preferences.value;
+		},
+		recordSearch: (keyword) => deps.preferences.addSearch(keyword),
+		toggleFavorite: (keyword) => deps.preferences.toggleFavorite(keyword),
+		deleteSearch: (keyword) => deps.preferences.deleteSearch(keyword),
+		clearHistory: () => deps.preferences.clearHistory(),
 		async search(keyword) {
+			keyword = keyword.trim();
+			if (!keyword) return [];
 			source = deps.makeSource ? deps.makeSource(keyword) : deps.source;
 			return discover();
 		},
@@ -5586,6 +5697,11 @@ function resolveStorePath(storePath, env = process.env) {
 let DownloadRemote = (() => {
 	let _classSuper = TypertRemoteService;
 	let _instanceExtraInitializers = [];
+	let _preferences_decorators;
+	let _recordSearch_decorators;
+	let _toggleFavorite_decorators;
+	let _deleteSearch_decorators;
+	let _clearHistory_decorators;
 	let _search_decorators;
 	let _list_decorators;
 	let _add_decorators;
@@ -5596,6 +5712,11 @@ let DownloadRemote = (() => {
 	return class DownloadRemote extends _classSuper {
 		static {
 			const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+			_preferences_decorators = [Remote("preferences")];
+			_recordSearch_decorators = [Remote("recordSearch")];
+			_toggleFavorite_decorators = [Remote("toggleFavorite")];
+			_deleteSearch_decorators = [Remote("deleteSearch")];
+			_clearHistory_decorators = [Remote("clearHistory")];
 			_search_decorators = [Remote("search")];
 			_list_decorators = [Remote("list")];
 			_add_decorators = [Remote("add")];
@@ -5603,6 +5724,61 @@ let DownloadRemote = (() => {
 			_resubmit_decorators = [Remote("resubmit")];
 			_status_decorators = [Remote("status")];
 			_refresh_decorators = [Remote("refresh")];
+			__esDecorate(this, null, _preferences_decorators, {
+				kind: "method",
+				name: "preferences",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "preferences" in obj,
+					get: (obj) => obj.preferences
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate(this, null, _recordSearch_decorators, {
+				kind: "method",
+				name: "recordSearch",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "recordSearch" in obj,
+					get: (obj) => obj.recordSearch
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate(this, null, _toggleFavorite_decorators, {
+				kind: "method",
+				name: "toggleFavorite",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "toggleFavorite" in obj,
+					get: (obj) => obj.toggleFavorite
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate(this, null, _deleteSearch_decorators, {
+				kind: "method",
+				name: "deleteSearch",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "deleteSearch" in obj,
+					get: (obj) => obj.deleteSearch
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate(this, null, _clearHistory_decorators, {
+				kind: "method",
+				name: "clearHistory",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "clearHistory" in obj,
+					get: (obj) => obj.clearHistory
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
 			__esDecorate(this, null, _search_decorators, {
 				kind: "method",
 				name: "search",
@@ -5698,7 +5874,8 @@ let DownloadRemote = (() => {
 		constructor(ctx, config) {
 			super(ctx, "download", { namespace: "download" });
 			const storeReady = createPersistentSubmitStore(createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)));
-			const ready = storeReady.then((store) => {
+			const preferencesReady = openPreferencesStore(createJsonFilePreferencesBackend(resolveStorePath("downloader/preferences.json")));
+			const ready = Promise.all([storeReady, preferencesReady]).then(([store, preferences]) => {
 				const client = async () => createAria2Client({
 					endpoint: config.endpoint,
 					timeoutMs: config.timeoutMs,
@@ -5706,6 +5883,7 @@ let DownloadRemote = (() => {
 				});
 				return createDownloadService({
 					store,
+					preferences,
 					source: createRssSource({
 						feedUrl: config.feedUrl,
 						timeoutMs: config.timeoutMs
@@ -5731,9 +5909,16 @@ let DownloadRemote = (() => {
 			ctx.effect(async () => {
 				await ready;
 				const store = await storeReady;
-				return () => store.flush();
+				return async () => {
+					await Promise.all([store.flush(), (await preferencesReady).flush()]);
+				};
 			});
 			this.service = {
+				preferences: async () => (await ready).preferences(),
+				recordSearch: async (keyword) => (await ready).recordSearch(keyword),
+				toggleFavorite: async (keyword) => (await ready).toggleFavorite(keyword),
+				deleteSearch: async (keyword) => (await ready).deleteSearch(keyword),
+				clearHistory: async () => (await ready).clearHistory(),
 				search: async (keyword) => (await ready).search(keyword),
 				listCandidates: async () => (await ready).listCandidates(),
 				resubmit: async (candidateId) => (await ready).resubmit(candidateId),
@@ -5741,6 +5926,44 @@ let DownloadRemote = (() => {
 				status: async (gid) => (await ready).status(gid),
 				refresh: async () => (await ready).refresh()
 			};
+		}
+		/**
+		* Read committed search preferences.
+		* @returns Committed preferences; persistence failures reject.
+		*/
+		preferences() {
+			return this.service.preferences();
+		}
+		/**
+		* Record a successfully executed search without executing it again.
+		* @param keyword - Exact keyword, with surrounding whitespace trimmed.
+		* @returns Committed preferences; persistence failures reject.
+		*/
+		recordSearch(keyword) {
+			return this.service.recordSearch(keyword);
+		}
+		/**
+		* Toggle a saved keyword without searching or downloading.
+		* @param keyword - Exact keyword, with surrounding whitespace trimmed.
+		* @returns Committed preferences; persistence failures reject.
+		*/
+		toggleFavorite(keyword) {
+			return this.service.toggleFavorite(keyword);
+		}
+		/**
+		* Delete one history keyword while retaining favorites.
+		* @param keyword - Exact keyword, with surrounding whitespace trimmed.
+		* @returns Committed preferences; persistence failures reject.
+		*/
+		deleteSearch(keyword) {
+			return this.service.deleteSearch(keyword);
+		}
+		/**
+		* Clear history while retaining favorites.
+		* @returns Committed preferences; persistence failures reject.
+		*/
+		clearHistory() {
+			return this.service.clearHistory();
 		}
 		/**
 		* Search candidates through the service for one keyword.
