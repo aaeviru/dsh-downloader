@@ -245,6 +245,21 @@ cd /home/aaevi/projects/dsh-downloader
 - bundle 已重建并入库（98 个文件）。
 - **已知环境限制**：本机 node 的 `fetch` 连不上外网，所以本地跑真实 feed 会失败；桌面版/正常网络下应可用。若抓取失败，界面会进入 error 态（`Unable to load downloads.`）。
 
+## 15. 安装必须使用打包产物
+
+`install_bundle` 把 bundle 目录以 `link:` 依赖装进 profile；pnpm 不会为 `link:` 目标安装依赖，Host 导入插件时找不到 `@deepseek-ai/dsh-tools` 等包，整个 profile 组合失败，桌面欢迎窗口的 `settings/describe` 返回 `ok:false` 并报 `Web RPC failed`。
+
+正确流程：
+
+```sh
+./scripts/pack.sh                     # 生成 dist/*.tgz
+dsh plugin --profile desktop add dist/deepseek-ai-dsh-experimental-downloader-0.5.1.tgz
+```
+
+- 禁止把 bundle 目录直接作为安装目标（会记录 `link:`）。
+- `bundle/package.json` 必须声明完整运行期依赖：`dsh-tools` 的 peer 链（`dsh-agent`、`dsh-llm`、`dsh-scope`、`dsh-session`、`dsh-system-prompt`、`dsh-user-approval`）、`dsh-typert-protocol`、`dsh-credentials`、`schemastery`、`cordis`。
+- 回归：`./scripts/verify-install.sh` 必须输出 `IMPORT_OK`（打包 → 装进隔离 profile → 从 profile 目录导入）。单元测试无法发现这类发布结构错误。
+
 ## 14. 产物与源码漂移（三次，同根因）
 
 | # | 表现 | 根因 |
