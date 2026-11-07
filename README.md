@@ -36,7 +36,7 @@ Mount it in a host composition that provides `tools`, `credentials`, and `typert
     tokenRef: ARIA2_TOKEN
 ```
 
-Search and refresh only discover candidates; they never submit downloads. Refresh fetches the last executed query once, returns `candidates`, `discovered`, `known`, and `unsubmittable`, and preserves the previous candidates and submission records on failure. The panel ignores unexecuted search drafts when refreshing. Submit an individual row or call `download_add` to download it; repeated submissions return the recorded GID.
+Search and refresh only discover candidates; they never submit downloads. Refresh fetches the last executed query once, returns `candidates`, `discovered`, `known`, and `unsubmittable`, and preserves the previous candidates and submission records on failure. The panel ignores unexecuted search drafts when refreshing. Click an unsubmitted row or call `download_add` to download it; repeated tool submissions return the recorded GID. Rows with Host submission records render green with a submitted label and GID, matched by `dedupeKey` across paging, searches, remounts, and refreshes. Clicking a submitted row only selects it. The selected row exposes a keyboard-accessible re-download button beside its title; it is disabled while pending. Explicit re-download replaces the stored GID only after success; failure preserves the previous record and shows an error. The Remote namespace exposes `submissions()` and `resubmit(candidateId)`; resubmit resolves the last discovered candidates, fetching the source once on a miss, and rejects unknown IDs. Tools expose no force mode.
 
 The panel is optional: it consumes the `download` namespace, occupies the `sidebar.panellist` icon, and adds a page to `main`.
 

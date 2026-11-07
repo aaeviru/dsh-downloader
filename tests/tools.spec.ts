@@ -27,6 +27,8 @@ function setup() {
     listCandidates: vi.fn<DownloadService['listCandidates']>().mockResolvedValue([]),
     add: vi.fn<DownloadService['add']>().mockResolvedValue({ gid: 'gid' }),
     status: vi.fn<DownloadService['status']>().mockResolvedValue({ state: 'active' }),
+    submissions: vi.fn(() => []),
+    resubmit: vi.fn<DownloadService['resubmit']>(),
     refresh: vi.fn<DownloadService['refresh']>(),
   } satisfies DownloadService
   const tools = createDownloadTools(service, { clock: () => new Date(triggeredAt) })
@@ -68,6 +70,7 @@ describe('download tools', () => {
     expect(JSON.stringify(output)).not.toContain('token')
     expect(JSON.stringify(output)).not.toContain('secret')
     expect(service.add).toHaveBeenCalledWith('candidate')
+    expect(service.resubmit).not.toHaveBeenCalled()
     expect(add.output.render(args, expected)).toEqual([{ type: 'text', text: `Download submission: ${outcome}.` }])
   })
 

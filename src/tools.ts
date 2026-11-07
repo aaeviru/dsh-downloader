@@ -8,7 +8,7 @@ import type { DownloadService } from './service.ts'
  * @param options - Clock used to timestamp submission attempts before calling the service.
  * @returns Unregistered search, add, and status tool definitions; service failures propagate to their callers.
  */
-export function createDownloadTools(service: DownloadService, options: {
+export function createDownloadTools(service: Pick<DownloadService, 'search' | 'add' | 'status'>, options: {
   readonly clock: () => Date
 }): readonly ToolDefinition[] {
   return [

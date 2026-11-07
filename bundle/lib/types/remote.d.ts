@@ -3,7 +3,7 @@ import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 import type Schema from '@deepseek-ai/schemastery';
 import { Config } from './config.ts';
 import type { DownloadService } from './service.ts';
-import type { Candidate, RefreshResult, SubmitResult } from './types.ts';
+import type { Candidate, RefreshResult, SubmitRecord, SubmitResult } from './types.ts';
 export type { Config } from './config.ts';
 /**
  * Resolve the submission store path.
@@ -18,7 +18,8 @@ export declare class DownloadRemote extends TypertRemoteService {
     /** Mount schema shared with the plugin entry. */
     static get Config(): Schema<Partial<Config>, Config>;
     /** The service the tools and the Remote methods share. */
-    readonly service: DownloadService;
+    readonly service: Omit<DownloadService, 'submissions'>;
+    private readonly ready;
     constructor(ctx: Context, config: Config);
     /**
      * Search candidates through the service for one keyword.
@@ -37,6 +38,17 @@ export declare class DownloadRemote extends TypertRemoteService {
      * @returns the submission outcome, GID, timestamp, and call ID.
      */
     add(candidateId: string): Promise<SubmitResult>;
+    /**
+     * Read accepted submissions after store hydration.
+     * @returns Records keyed by candidate dedupe key.
+     */
+    submissions(): Promise<readonly SubmitRecord[]>;
+    /**
+     * Explicitly submit a candidate again, preserving its old record on failure.
+     * @param candidateId - Candidate identifier resolved by the service.
+     * @returns The new gid or a pending/unsupported outcome.
+     */
+    resubmit(candidateId: string): Promise<SubmitResult>;
     /**
      * Read the state of one aria2 download.
      * @param gid - aria2 download identifier returned by a submission.

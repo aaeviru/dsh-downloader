@@ -13,6 +13,7 @@ export declare const en: {
     readonly error: "Unable to load downloads.";
     readonly retry: "Retry";
     readonly submit: "Submit";
+    readonly resubmit: "Re-download";
     readonly submitting: "Submitting…";
     readonly submitted: "Submitted: {gid}";
     readonly alreadySubmitted: "Previously submitted: {gid}";

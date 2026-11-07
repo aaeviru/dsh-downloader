@@ -212,6 +212,15 @@ window.__ModuleLoader__.load({
 			"known": zod.z.number().readonly(),
 			"unsubmittable": zod.z.number().readonly()
 		});
+		let _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema$value ??= zod.z.union([
+			zod.z.object({ "gid": zod.z.string().readonly() }),
+			zod.z.object({ "alreadySubmitted": zod.z.string().readonly() }),
+			zod.z.object({ "alreadySubmitting": zod.z.literal(true).readonly() }),
+			zod.z.object({ "unsubmittable": zod.z.literal(true).readonly() })
+		]);
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_result$schema$value;
@@ -235,8 +244,15 @@ window.__ModuleLoader__.load({
 		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_status_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value ??= zod.z.object({ "state": zod.z.string() });
+		let _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value ??= zod.z.array(zod.z.object({
+			"key": zod.z.string().readonly(),
+			"gid": zod.z.string().readonly()
+		}));
 		let _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_add_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value;
@@ -274,7 +290,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 106,
+						"line": 110,
 						"column": 3
 					}
 				},
@@ -360,7 +376,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 96,
+						"line": 100,
 						"column": 3
 					}
 				},
@@ -461,7 +477,41 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 125,
+						"line": 148,
+						"column": 3
+					}
+				},
+				"download/resubmit": {
+					service: "download",
+					description: "Explicitly submit a candidate again, preserving its old record on failure.",
+					invocation: { kind: "direct" },
+					parameters: [{
+						name: "candidateId",
+						description: "Candidate identifier resolved by the service.",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/resubmit:candidateId",
+							create: _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0$schema,
+							jsonSchema: { "type": "string" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/resubmit:candidateId",
+							create: _deepseek_ai_dsh_experimental_downloader_download_resubmit_parameter_0_strict$schema,
+							jsonSchema: { "type": "string" }
+						}
+					}],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#SubmitResult",
+						create: _deepseek_ai_dsh_experimental_downloader_download_resubmit_result$schema,
+						description: "The new gid or a pending/unsupported outcome.",
+						jsonSchemaError: "typert tool schema: selected union branches overlap or have no required discriminator"
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 129,
 						"column": 3
 					}
 				},
@@ -563,7 +613,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 87,
+						"line": 91,
 						"column": 3
 					}
 				},
@@ -602,8 +652,37 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 116,
+						"line": 139,
 						"column": 3
+					}
+				},
+				"download/submissions": {
+					service: "download",
+					description: "Read accepted submissions after store hydration.",
+					invocation: { kind: "direct" },
+					parameters: [],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/submissions:result",
+						create: _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema,
+						description: "Records keyed by candidate dedupe key.",
+						jsonSchema: {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"key": { "type": "string" },
+									"gid": { "type": "string" }
+								},
+								"required": ["key", "gid"],
+								"additionalProperties": true
+							}
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 119,
+						"column": 9
 					}
 				}
 			}
@@ -647,64 +726,106 @@ window.__ModuleLoader__.load({
 			return t("unsubmittable");
 		}
 		/** A candidate owns its pending state and visible submission outcome. */
-		function CandidateRow({ candidate, t, download }) {
+		function CandidateRow({ candidate, t, download, gid, selected, select, refreshSubmissions }) {
 			const [pending, setPending] = (0, react.useState)(false);
 			const [message, setMessage] = (0, react.useState)("");
 			const published = formatPublished(candidate.publishedAt);
-			async function submit() {
+			async function submit(resubmit = false) {
 				setPending(true);
 				try {
-					const result = await download.add(candidate.id);
+					const result = await (resubmit ? download.resubmit(candidate.id) : download.add(candidate.id));
 					setMessage(result.ok ? outcome(result.value, t) : t("submitError"));
+					if (result.ok && ("gid" in result.value || "alreadySubmitted" in result.value)) {
+						await refreshSubmissions();
+						setMessage("");
+					}
 				} catch {
 					setMessage(t("submitError"));
 				} finally {
 					setPending(false);
 				}
 			}
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", { children: [
-				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-					type: "button",
-					disabled: !candidate.submittable || pending,
-					onClick: () => {
-						submit();
-					},
-					style: {
-						display: "grid",
-						gridTemplateColumns: "1fr 120px 70px 70px 70px",
-						gap: 8,
-						width: "100%",
-						textAlign: "left",
-						background: "none",
-						border: "none",
-						cursor: candidate.submittable ? "pointer" : "not-allowed",
-						padding: "8px 4px",
-						borderBottom: "1px solid var(--dsw-alias-border-l2)",
-						color: "inherit"
-					},
-					children: [
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.title }),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							style: { color: "var(--dsw-alias-label-secondary)" },
-							children: candidate.sizeBytes === null ? t("unknownSize") : new Intl.NumberFormat(void 0, {
-								style: "unit",
-								unit: "byte"
-							}).format(candidate.sizeBytes)
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							style: { color: "var(--dsw-alias-label-secondary)" },
-							children: published
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.seeders ?? "—" }),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.downloads ?? "—" })
-					]
-				}),
-				!candidate.submittable && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("unsubmittable") }),
-				message !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-					role: "status",
-					children: message
-				})
-			] });
+			function activate() {
+				if (pending) return;
+				select();
+				if (gid === void 0 && candidate.submittable) submit();
+			}
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
+				"data-submitted": gid !== void 0,
+				style: { background: gid !== void 0 ? "var(--dsw-alias-state-success-tertiary)" : "none" },
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						onClick: activate,
+						style: {
+							display: "grid",
+							gridTemplateColumns: "1fr 120px 70px 70px 70px",
+							gap: 8,
+							width: "100%",
+							textAlign: "left",
+							cursor: candidate.submittable ? "pointer" : "not-allowed",
+							padding: "8px 4px",
+							borderBottom: "1px solid var(--dsw-alias-border-l2)",
+							color: "inherit"
+						},
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+								style: {
+									display: "flex",
+									alignItems: "center",
+									gap: 8
+								},
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: pending || gid === void 0 && !candidate.submittable,
+									style: {
+										background: "none",
+										border: "none",
+										padding: 0,
+										color: "inherit",
+										textAlign: "left",
+										cursor: "inherit"
+									},
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.title })
+								}), selected && gid !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": t("resubmit"),
+									disabled: pending || !candidate.submittable,
+									onClick: (event) => {
+										event.stopPropagation();
+										submit(true);
+									},
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										"aria-hidden": "true",
+										children: "↻"
+									})
+								})]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								style: { color: "var(--dsw-alias-label-secondary)" },
+								children: candidate.sizeBytes === null ? t("unknownSize") : new Intl.NumberFormat(void 0, {
+									style: "unit",
+									unit: "byte"
+								}).format(candidate.sizeBytes)
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								style: { color: "var(--dsw-alias-label-secondary)" },
+								children: published
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.seeders ?? "—" }),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: candidate.downloads ?? "—" })
+						]
+					}),
+					gid !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						role: "status",
+						children: t("submitted").replace("{gid}", gid)
+					}),
+					!candidate.submittable && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("unsubmittable") }),
+					message !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						role: "status",
+						children: message
+					})
+				]
+			});
 		}
 		/** Render loading, empty, candidate and recoverable error states. */
 		function DownloaderPanel({ t, download }) {
@@ -717,10 +838,19 @@ window.__ModuleLoader__.load({
 			const lastExecutedKeyword = (0, react.useRef)(void 0);
 			const [candidates, setCandidates] = (0, react.useState)([]);
 			const [page, setPage] = (0, react.useState)(1);
+			const [selectedId, setSelectedId] = (0, react.useState)();
+			const [submittedGids, setSubmittedGids] = (0, react.useState)(/* @__PURE__ */ new Map());
+			const submittedKeys = new Set(submittedGids.keys());
+			const refreshSubmissions = (0, react.useCallback)(async () => {
+				const result = await download.submissions();
+				if (!result.ok) throw result.error;
+				setSubmittedGids(new Map(result.value.map((record) => [record.key, record.gid])));
+			}, [download]);
 			const pageSize = 20;
 			const load = (0, react.useCallback)(async (refresh) => {
 				setState({ kind: "loading" });
 				try {
+					await refreshSubmissions();
 					if (refresh && lastExecutedKeyword.current === void 0) {
 						const result = await download.refresh();
 						if (!result.ok) {
@@ -738,7 +868,7 @@ window.__ModuleLoader__.load({
 				} catch {
 					setState({ kind: "error" });
 				}
-			}, [download]);
+			}, [download, refreshSubmissions]);
 			(0, react.useEffect)(() => {
 				load(false);
 			}, [load]);
@@ -747,13 +877,18 @@ window.__ModuleLoader__.load({
 				setPage(1);
 				lastExecutedKeyword.current = keyword;
 				try {
+					await refreshSubmissions();
 					const result = await download.search(keyword);
 					if (result.ok) setCandidates(result.value);
 					setState(result.ok ? { kind: "ready" } : { kind: "error" });
 				} catch {
 					setState({ kind: "error" });
 				}
-			}, [download, keyword]);
+			}, [
+				download,
+				keyword,
+				refreshSubmissions
+			]);
 			const ordered = order(candidates, sort);
 			const pageCount = Math.max(1, Math.ceil(ordered.length / pageSize));
 			const visible = ordered.slice((page - 1) * pageSize, page * pageSize);
@@ -872,7 +1007,13 @@ window.__ModuleLoader__.load({
 							children: visible.map((candidate) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CandidateRow, {
 								candidate,
 								t,
-								download
+								download,
+								gid: submittedKeys.has(candidate.dedupeKey) ? submittedGids.get(candidate.dedupeKey) : void 0,
+								selected: selectedId === candidate.id,
+								select: () => {
+									setSelectedId(candidate.id);
+								},
+								refreshSubmissions
 							}, candidate.id))
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
@@ -950,6 +1091,7 @@ window.__ModuleLoader__.load({
 			error: "Unable to load downloads.",
 			retry: "Retry",
 			submit: "Submit",
+			resubmit: "Re-download",
 			submitting: "Submitting…",
 			submitted: "Submitted: {gid}",
 			alreadySubmitted: "Previously submitted: {gid}",
@@ -975,6 +1117,7 @@ window.__ModuleLoader__.load({
 			error: "无法加载下载列表。",
 			retry: "重试",
 			submit: "提交",
+			resubmit: "重新下载",
 			submitting: "提交中…",
 			submitted: "已提交：{gid}",
 			alreadySubmitted: "此前已提交：{gid}",

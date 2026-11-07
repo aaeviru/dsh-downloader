@@ -37,6 +37,12 @@ export type SubmitResult = {
 /** Suppresses recorded and per-instance pending duplicates. */
 export interface DownloadCoordinator {
     submit(candidate: Candidate): Promise<SubmitResult>;
+    /**
+     * Explicitly submit again; failed attempts preserve the previous record.
+     * @param candidate - Candidate to send, even when its key is recorded.
+     * @returns The new gid or an in-flight/unsupported outcome.
+     */
+    resubmit(candidate: Candidate): Promise<SubmitResult>;
 }
 /**
  * Create a coordinator over the downloader and submission store.

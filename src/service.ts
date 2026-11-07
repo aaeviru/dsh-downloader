@@ -1,7 +1,7 @@
 import { dedupeCandidates } from './candidate.ts'
 import type { Candidate } from './candidate.ts'
 import { createDownloadCoordinator } from './coordinator.ts'
-import type { Downloader, Source, SubmitResult, SubmitStore } from './coordinator.ts'
+import type { Downloader, Source, SubmitRecord, SubmitResult, SubmitStore } from './coordinator.ts'
 
 /** Read-only discovery results; known counts keys already recorded in the submission store. */
 export interface RefreshResult {
@@ -28,6 +28,17 @@ export interface DownloadService {
   search(keyword: string): Promise<readonly Candidate[]>
   listCandidates(): Promise<readonly Candidate[]>
   add(candidateId: string): Promise<SubmitResult>
+  /**
+   * Read accepted submissions.
+   * @returns Store records keyed by candidate dedupe key.
+   */
+  submissions(): readonly SubmitRecord[]
+  /**
+   * Submit again, replacing the record only on success.
+   * @param candidateId - Identifier from the last discovery; a miss triggers one fresh discovery.
+   * @returns The submission outcome; unknown identifiers reject with UnknownCandidateError.
+   */
+  resubmit(candidateId: string): Promise<SubmitResult>
   status(gid: string): Promise<{ state: string }>
   /** Reload the last executed query once; failure preserves the cache and submission records. */
   refresh(): Promise<RefreshResult>
@@ -67,6 +78,15 @@ export function createDownloadService(deps: {
       const candidate = candidates.find(candidate => candidate.id === candidateId)
       if (!candidate) throw new UnknownCandidateError(candidateId)
       return coordinator.submit(candidate)
+    },
+    submissions() {
+      return deps.store.list()
+    },
+    async resubmit(candidateId) {
+      const candidate = cache?.find(candidate => candidate.id === candidateId)
+        ?? (await discover()).find(candidate => candidate.id === candidateId)
+      if (!candidate) throw new UnknownCandidateError(candidateId)
+      return coordinator.resubmit(candidate)
     },
     status(gid) {
       return deps.downloader.status(gid)

@@ -6,11 +6,11 @@
 export function createDownloadCoordinator(deps) {
     const { downloader, store } = deps;
     const inFlight = new Map();
-    async function submit(candidate) {
+    async function run(candidate, resubmit) {
         if (!candidate.submittable)
             return { unsubmittable: true };
         const key = candidate.dedupeKey;
-        if (store.has(key)) {
+        if (!resubmit && store.has(key)) {
             const record = store.list().find(record => record.key === key);
             if (record === undefined)
                 throw new Error(`SubmitStore has key "${key}" but no matching record`);
@@ -28,6 +28,9 @@ export function createDownloadCoordinator(deps) {
             inFlight.delete(key);
         }
     }
-    return { submit };
+    return {
+        submit: candidate => run(candidate, false),
+        resubmit: candidate => run(candidate, true),
+    };
 }
 //# sourceMappingURL=coordinator.js.map

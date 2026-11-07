@@ -36,7 +36,7 @@ kind: "package-reference"
     tokenRef: ARIA2_TOKEN
 ```
 
-搜索和刷新只发现候选，绝不提交下载。刷新仅请求一次最后执行的查询，返回 `candidates`、`discovered`、`known` 和 `unsubmittable`；失败时保留先前的候选和提交记录。面板刷新时忽略尚未执行的搜索草稿。点击单个候选行或调用 `download_add` 才会下载；重复提交返回已记录的 GID。
+搜索和刷新只发现候选，绝不提交下载。刷新仅请求一次最后执行的查询，返回 `candidates`、`discovered`、`known` 和 `unsubmittable`；失败时保留先前的候选和提交记录。面板刷新时忽略尚未执行的搜索草稿。点击未提交的候选行或调用 `download_add` 才会下载；工具重复提交返回已记录的 GID。有宿主提交记录的行按 `dedupeKey` 匹配，显示绿色背景、已提交标签和 GID，翻页、搜索、重新挂载和刷新后仍然有效。点击已提交行只会选中它。选中行的标题旁提供可通过键盘操作的重新下载按钮，操作进行时禁用。显式重新下载仅在成功后替换存储的 GID；失败时保留原记录并显示错误。Remote 命名空间提供 `submissions()` 和 `resubmit(candidateId)`；重新提交先查找最近发现的候选，未找到时请求源一次，仍不存在的 ID 会被拒绝。工具不提供强制提交模式。
 
 面板是可选的：它消费 `download` 命名空间，在 `sidebar.panellist` 占一个图标，并在 `main` 增加一个页面。
 

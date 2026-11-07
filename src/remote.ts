@@ -9,7 +9,7 @@ import { createAria2Client } from './aria2.ts'
 import { createDownloadService } from './service.ts'
 import { createRssSource } from './source.ts'
 import type { DownloadService } from './service.ts'
-import type { Candidate, RefreshResult, SubmitResult } from './types.ts'
+import type { Candidate, RefreshResult, SubmitRecord, SubmitResult } from './types.ts'
 import { createPersistentSubmitStore } from './store.ts'
 import { createJsonFileSubmitStoreBackend } from './store-json.ts'
 
@@ -34,7 +34,9 @@ export class DownloadRemote extends TypertRemoteService {
   }
 
   /** The service the tools and the Remote methods share. */
-  readonly service: DownloadService
+  readonly service: Omit<DownloadService, 'submissions'>
+
+  private readonly ready: Promise<DownloadService>
 
   constructor(ctx: Context, config: Config) {
     super(ctx, 'download', { namespace: 'download' })
@@ -63,6 +65,7 @@ export class DownloadRemote extends TypertRemoteService {
         },
       })
     })
+    this.ready = ready
     // Observe hydration failures through the host lifecycle as well as callers.
     ctx.effect(async () => {
       await ready
@@ -72,6 +75,7 @@ export class DownloadRemote extends TypertRemoteService {
     this.service = {
       search: async keyword => (await ready).search(keyword),
       listCandidates: async () => (await ready).listCandidates(),
+      resubmit: async candidateId => (await ready).resubmit(candidateId),
       add: async candidateId => (await ready).add(candidateId),
       status: async gid => (await ready).status(gid),
       refresh: async () => (await ready).refresh(),
@@ -105,6 +109,25 @@ export class DownloadRemote extends TypertRemoteService {
   @Remote('add')
   add(candidateId: string): Promise<SubmitResult> {
     return this.service.add(candidateId)
+  }
+
+  /**
+   * Read accepted submissions after store hydration.
+   * @returns Records keyed by candidate dedupe key.
+   */
+  @Remote('submissions')
+  async submissions(): Promise<readonly SubmitRecord[]> {
+    return (await this.ready).submissions()
+  }
+
+  /**
+   * Explicitly submit a candidate again, preserving its old record on failure.
+   * @param candidateId - Candidate identifier resolved by the service.
+   * @returns The new gid or a pending/unsupported outcome.
+   */
+  @Remote('resubmit')
+  resubmit(candidateId: string): Promise<SubmitResult> {
+    return this.service.resubmit(candidateId)
   }
 
   /**
