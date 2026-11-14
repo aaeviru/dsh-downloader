@@ -6,22 +6,21 @@
 
 | 项 | 值 |
 |---|---|
-| 插件真身 | `~/projects/dsh-downloader`（git 远端 `aaeviru/dsh-downloader`，分支 `main`） |
+| 插件仓库 | `~/projects/dsh-downloader`（git 远端 `aaeviru/dsh-downloader`）；任务实现使用独立 worktree，分支用 `git branch --show-current` 核实 |
 | 工作区内的入口 | `packages/experimental/dsh-downloader`（当前是**真实目录副本**，由 `scripts/build-bundle.sh` 从本仓同步；历史记录里的符号链接方案已不再使用） |
 | 污染防护 | dsh 仓库的 `.git/info/exclude` 已加该路径，`git status` 不显示 |
-| 会话工作区（写边界） | `/home/aaevi/projects/deepseek-harness` |
-| 沙箱模式 | `workspace-write` + 四个常设例外 |
+| 共享会话工作区 | `/home/aaevi/projects`；各仓库保留独立 Git 历史，入口说明见该目录的 `AGENTS.md` |
+| 沙箱模式 | `workspace-write`；以会话实际配置的写根为准 |
 
-例外写在 `~/.dsh/profiles/web/cordis.patch.yml` 的 `sandbox-policy.additionalWritableRoots`：
+Codex 会话从 Home Repo 启动：
 
-```
-/home/aaevi/projects/dsh-plugin-hello-page
-/home/aaevi/projects/dsh-downloader
-/home/aaevi/.agents
-/home/aaevi/.local/share/pnpm/store
+```sh
+codex -C /home/aaevi/projects
 ```
 
-注意：include 的 patch 是**按 key 浅替换**，所以该条目必须连带重复 `mode` 与 `workspaceRoot`，否则会被默认值覆盖成 `read-only`。
+DSH Web profile 的沙箱配置独立于 Codex：`~/.dsh/profiles/web/cordis.patch.yml` 的 `sandbox-policy.workspaceRoot` 默认取启动 cwd，会话指定 cwd 时以会话目录为准。当会话工作区为 `/home/aaevi/projects` 时，所有子仓库已在写根内，无需逐仓增加例外。现有 profile 保留的 hello-page、downloader 目录例外兼容从 harness 子目录启动的旧会话；外部的 `~/.agents` 和 pnpm store 仍是单独的附加写根。
+
+注意：include 的 patch 是**按 key 浅替换**；覆盖 `sandbox-policy` 条目时需一并写明 `mode` 与 `workspaceRoot`。
 
 ### 依赖安装：只能在 harness 根目录跑
 
@@ -63,11 +62,11 @@ git -c credential.helper='!gh auth git-credential' push
 
 1. **`tsconfig.json` 只能用绝对路径**。TypeScript 不解析符号链接，同一份配置无法同时对「符号链接视角」和「真身视角」成立；相对路径在其中一个视角必然解析到错误位置。
 2. **`tsdown.config.ts` 不能用仓库内相对路径**。它从真身目录加载，`../../client/tsdown.client.ts` 会解析到 `~/client`。改为从 `DSH_CHECKOUT`（默认 `/home/aaevi/projects/deepseek-harness`）定位构建预设。
-3. **派 Codex 必须以真身目录为 cwd**。它的 `sandbox_mode = "workspace-write"` 以启动 cwd 为唯一写根，`~/.codex/config.toml` 只 trust 了 `deepseek-harness`；从 harness 启动时写入真身会被判成「项目外」，报 `Read-only file system`。用 `cwd=/home/aaevi/projects/dsh-downloader` 启动即可。
+3. **Codex 的写根须覆盖目标 worktree**。从 `/home/aaevi/projects` 启动可覆盖其下的仓库与 worktree；仅从 harness 子目录启动时，兄弟仓库可能落在写根之外。若 worktree 在共享工作区外，须核对该会话的实际写权限。仓库信任设置与沙箱写根分别核实。
 
 4. **值导入 harness 包必须加项目引用**。`tsconfig.base.json` 的 `paths` 把 `@deepseek-ai/*` 映射到**源码**，而本包 `rootDir` 只有 `src`，于是 `import { defineTool } from '@deepseek-ai/dsh-tools'` 会报 `TS6059/TS6307`（文件不在 rootDir 内）。修法：在 `tsconfig.json` 的 `references` 里加上该包的项目路径（已有 `vendor/cordis` 与 `packages/core/tools` 两条）。只加 `dependencies` 不够。
 
-换机器、改目录名、移植到 Windows 时，要同步改这五处：`tsconfig.json` 的 5 条绝对路径、`tsconfig.json` 的 2 条项目引用、`tsdown.config.ts` 的默认兜底值、profile 白名单里的路径、以及 Codex 的启动 cwd。
+换机器、改目录名、移植到 Windows 时，要核对构建配置中的绝对路径、项目引用与 `DSH_CHECKOUT`，以及会话工作区和 profile 的外部附加写根。
 
 ## 3. 已完成
 
