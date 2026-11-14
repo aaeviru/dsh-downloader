@@ -69,3 +69,13 @@ it('omits an empty keyword', async () => {
   await source.listCandidates()
   expect(seen[0]).not.toContain('q=')
 })
+
+it('builds filtered request URLs using effective settings', async () => {
+  const transport = vi.fn(async () => responding(xml))
+  const source = createRssSource({ feedUrl: 'https://sukebei.nyaa.si/?f=0&f=1&c=1_0&q=old',
+    keyword: 'new & term', timeoutMs: 1000, transport,
+    filters: { kind: 'sukebei', settings: { endpoint: 'http://host/', qualityFilter: '2', category: '2_2' } },
+  })
+  await source.listCandidates()
+  expect(transport).toHaveBeenCalledWith('https://sukebei.nyaa.si/?f=2&c=2_2&q=new+%26+term', expect.any(AbortSignal))
+})

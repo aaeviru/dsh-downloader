@@ -138,3 +138,15 @@ it('blocks resubmit while an ordinary submission is pending', async () => {
   gate.resolve({ gid: 'first' })
   await pending
 })
+
+it('records the current endpoint on accepted submit and resubmit', async () => {
+  const { downloader, store } = setup()
+  const record = vi.spyOn(store, 'record')
+  let endpoint = 'http://first/jsonrpc'
+  const coordinator = createDownloadCoordinator({ downloader, store, endpoint: () => endpoint })
+  await coordinator.submit(candidate('key'))
+  expect(record).toHaveBeenLastCalledWith('key', 'gid:key', endpoint)
+  endpoint = 'http://second/jsonrpc'
+  await coordinator.resubmit(candidate('key'))
+  expect(record).toHaveBeenLastCalledWith('key', 'gid:key', endpoint)
+})

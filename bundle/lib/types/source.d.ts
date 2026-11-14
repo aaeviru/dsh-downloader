@@ -1,3 +1,5 @@
+import type { EffectiveSettings } from './settings.ts';
+import type { SourceKind } from './catalog.ts';
 import type { Source } from './coordinator.ts';
 /** One HTTP response as the RSS source consumes it. */
 export interface FeedResponse {
@@ -15,6 +17,10 @@ export declare class FeedFetchError extends Error {
 }
 /** Feed address and request deadline with optional search and transport overrides. */
 export interface RssSourceOptions {
+    readonly filters?: {
+        readonly kind: SourceKind;
+        readonly settings: EffectiveSettings;
+    };
     readonly feedUrl: string;
     /** Feed search term; omitted keeps the address as configured. */
     readonly keyword?: string;

@@ -1,3 +1,4 @@
+import { SettingsPage } from "./SettingsPage.js";
 import { DownloaderPanel } from "./DownloaderPanel.js";
 import { DownloaderIcon } from "./DownloaderIcon.js";
 import { NS, en, zh } from "./locales.js";
@@ -15,5 +16,9 @@ export function mountDownloader(ctx, download) {
     ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
         name: 'sidebar.panellist', id: 'downloader', order: 40, locale: NS, label: () => t('panel'),
     }, DownloaderIcon));
+    const ROW_KEY = '@deepseek-ai/dsh-experimental-downloader#downloader';
+    ctx.slots.inject('plugins.row.config', () => ctx.slots.register({
+        name: 'plugins.row.config', key: ROW_KEY, locale: NS, inject: () => ({ t, download }),
+    }, SettingsPage));
 }
 //# sourceMappingURL=mount.js.map

@@ -109,6 +109,21 @@ const _deepseek_ai_dsh_experimental_downloader_download_search_result$schema = (
   'submittable': z.boolean().readonly(),
   'dedupeKey': z.string().readonly(),
 })))
+let _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema$value ??= z.object({
+  'source': z.object({
+  'kind': z.union([z.literal("unknown"), z.literal("sukebei"), z.literal("nyaa")]).readonly(),
+  'categories': z.array(z.object({
+  'code': z.string().readonly(),
+  'label': z.string().readonly(),
+})).readonly(),
+}).readonly(),
+  'effective': z.object({
+  'endpoint': z.string().readonly(),
+  'qualityFilter': z.union([z.literal("0"), z.literal("1"), z.literal("2")]).readonly(),
+  'category': z.union([z.literal("0_0"), z.literal("1_0"), z.literal("1_1"), z.literal("1_2"), z.literal("1_3"), z.literal("1_4"), z.literal("1_5"), z.literal("2_0"), z.literal("2_1"), z.literal("2_2")]).readonly(),
+}).readonly(),
+}))
 let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value
@@ -119,7 +134,18 @@ let _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$
 const _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value ??= z.array(z.object({
   'key': z.string().readonly(),
   'gid': z.string().readonly(),
+  'endpoint': z.string().readonly().optional(),
 })))
+let _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema$value ??= z.union([z.object({
+  'ok': z.literal(true).readonly(),
+  'version': z.string().readonly(),
+}), z.object({
+  'ok': z.literal(false).readonly(),
+  'reason': z.union([z.literal("protocol"), z.literal("timeout"), z.literal("invalid"), z.literal("auth"), z.literal("unreachable")]).readonly(),
+})]))
 let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema$value
@@ -139,6 +165,8 @@ let _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$
 const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= z.string())
+let _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema$value
+const _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema$value ??= z.string())
 let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value
 const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema = () => (_deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value ??= z.string())
 
@@ -175,7 +203,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'the submission outcome, GID, timestamp, and call ID.',
         jsonSchemaError: 'typert tool schema: selected union branches overlap or have no required discriminator',
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":166,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":201,"column":3},
     },
     'download/clearHistory': {
       service: 'download',
@@ -190,7 +218,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'Committed preferences; persistence failures reject.',
         jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":137,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":172,"column":3},
     },
     'download/deleteSearch': {
       service: 'download',
@@ -222,7 +250,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'Committed preferences; persistence failures reject.',
         jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":128,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":163,"column":3},
     },
     'download/list': {
       service: 'download',
@@ -237,7 +265,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'the current candidate set.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":156,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":191,"column":3},
     },
     'download/preferences': {
       service: 'download',
@@ -252,7 +280,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'Committed preferences; persistence failures reject.',
         jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":98,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":133,"column":3},
     },
     'download/recordSearch': {
       service: 'download',
@@ -284,7 +312,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'Committed preferences; persistence failures reject.',
         jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":108,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":143,"column":3},
     },
     'download/refresh': {
       service: 'download',
@@ -299,7 +327,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'the candidates and discovery counts; source failure preserves the previous cache.',
         jsonSchema: {"type":"object","properties":{"candidates":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},"discovered":{"type":"number"},"known":{"type":"number"},"unsubmittable":{"type":"number"}},"required":["candidates","discovered","known","unsubmittable"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":204,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":239,"column":3},
     },
     'download/resubmit': {
       service: 'download',
@@ -331,7 +359,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'The new gid or a pending/unsupported outcome.',
         jsonSchemaError: 'typert tool schema: selected union branches overlap or have no required discriminator',
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":185,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":220,"column":3},
     },
     'download/search': {
       service: 'download',
@@ -363,7 +391,21 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'the matching candidates after deduplication.',
         jsonSchema: {"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"sourceId":{"type":"string"},"title":{"type":"string"},"publishedAt":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"infoHash":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"magnetUri":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"torrentUrl":{"oneOf":[{"type":"null","const":null},{"type":"string"}]},"sizeBytes":{"oneOf":[{"type":"null","const":null},{"type":"number"}]},"seeders":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm seeders when the feed reports them."},"leechers":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Swarm leechers when the feed reports them."},"downloads":{"oneOf":[{"type":"null","const":null},{"type":"number"}],"description":"Completed downloads when the feed reports them."},"sourceUrl":{"type":"string"},"submittable":{"type":"boolean"},"dedupeKey":{"type":"string"}},"required":["id","sourceId","title","publishedAt","infoHash","magnetUri","torrentUrl","sizeBytes","sourceUrl","submittable","dedupeKey"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":147,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":182,"column":3},
+    },
+    'download/settingsInfo': {
+      service: 'download',
+      description: 'Read provider choices and effective settings without exposing credentials.',
+      invocation: { kind: 'direct' },
+      parameters: [
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#SettingsInfo',
+        create: _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema,
+        jsonSchema: {"type":"object","properties":{"source":{"type":"object","properties":{"kind":{"type":"string","enum":["unknown","sukebei","nyaa"]},"categories":{"type":"array","items":{"type":"object","properties":{"code":{"type":"string"},"label":{"type":"string"}},"required":["code","label"],"additionalProperties":true}}},"required":["kind","categories"],"additionalProperties":true},"effective":{"type":"object","properties":{"endpoint":{"type":"string"},"qualityFilter":{"type":"string","enum":["0","1","2"]},"category":{"type":"string","enum":["0_0","1_0","1_1","1_2","1_3","1_4","1_5","2_0","2_1","2_2"]}},"required":["endpoint","qualityFilter","category"],"additionalProperties":true}},"required":["source","effective"],"additionalProperties":true},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":111,"column":9},
     },
     'download/status': {
       service: 'download',
@@ -395,7 +437,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'the aria2-reported state for that GID.',
         jsonSchema: {"type":"object","properties":{"state":{"type":"string"}},"required":["state"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":195,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":230,"column":3},
     },
     'download/submissions': {
       service: 'download',
@@ -408,9 +450,39 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/submissions:result',
         create: _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema,
         description: 'Records keyed by candidate dedupe key.',
-        jsonSchema: {"type":"array","items":{"type":"object","properties":{"key":{"type":"string"},"gid":{"type":"string"}},"required":["key","gid"],"additionalProperties":true}},
+        jsonSchema: {"type":"array","items":{"type":"object","properties":{"key":{"type":"string"},"gid":{"type":"string"},"endpoint":{"type":"string"}},"required":["key","gid"],"additionalProperties":true}},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":175,"column":9},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":210,"column":9},
+    },
+    'download/testConnection': {
+      service: 'download',
+      description: 'Probe a staged endpoint with the current Host credential without saving or submitting.',
+      invocation: { kind: 'direct' },
+      parameters: [
+        {
+          name: 'endpoint',
+          source: 'json',
+          codec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/testConnection:endpoint',
+            create: _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema,
+            jsonSchema: {"type":"string"},
+          },
+          strictCodec: {
+            mode: 'strict',
+            typeSymbol: '@deepseek-ai/dsh-experimental-downloader#download/testConnection:endpoint',
+            create: _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema,
+            jsonSchema: {"type":"string"},
+          },
+        },
+      ],
+      result: {
+        mode: 'strict',
+        typeSymbol: '@deepseek-ai/dsh-experimental-downloader/types#TestConnectionResult',
+        create: _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema,
+        jsonSchema: {"oneOf":[{"type":"object","properties":{"ok":{"type":"boolean","const":true},"version":{"type":"string"}},"required":["ok","version"],"additionalProperties":true},{"type":"object","properties":{"ok":{"type":"boolean","const":false},"reason":{"type":"string","enum":["protocol","timeout","invalid","auth","unreachable"]}},"required":["ok","reason"],"additionalProperties":true}]},
+      },
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":118,"column":9},
     },
     'download/toggleFavorite': {
       service: 'download',
@@ -442,7 +514,7 @@ export const TYPERT_REMOTE = createTypertRemoteInfo({
         description: 'Committed preferences; persistence failures reject.',
         jsonSchema: {"type":"object","properties":{"history":{"type":"array","items":{"type":"string"}},"favorites":{"type":"array","items":{"type":"string"}}},"required":["history","favorites"],"additionalProperties":true},
       },
-      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":118,"column":3},
+      sourceLocation: {"file":"packages/experimental/dsh-downloader/src/remote.ts","line":153,"column":3},
     },
   },
 }, z)

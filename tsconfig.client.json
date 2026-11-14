@@ -8,11 +8,15 @@
   "include": [
     "src/client",
     "src/types.ts",
+    "src/catalog.ts",
     "src/candidate.ts",
     "src/coordinator.ts",
     "src/service.ts"
   ],
   "references": [
+    {
+      "path": "/home/aaevi/projects/deepseek-harness/packages/client/ui-plugin-manager/tsconfig.client.json"
+    },
     {
       "path": "/home/aaevi/projects/deepseek-harness/vendor/cordis"
     },

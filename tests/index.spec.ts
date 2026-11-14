@@ -15,8 +15,15 @@ afterEach(() => { vi.restoreAllMocks() })
 it('supplies mount defaults and validates timeout', () => {
   expect(name).toBe('dsh-downloader')
   expect(inject).toEqual(['tools', 'credentials', 'typert'])
-  expect(Config({})).toEqual({ endpoint: 'http://10.0.0.7:8082/jsonrpc', tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json', feedUrl: 'https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2' })
+  const config = Config({})
+  expect(config.endpoint.get()).toBe('http://10.0.0.7:8082/jsonrpc')
+  expect(config.qualityFilter.get()).toBeUndefined()
+  expect(config.category.get()).toBeUndefined()
+  expect(config).toMatchObject({ tokenRef: 'ARIA2_TOKEN', timeoutMs: 15000, storePath: 'downloader/submissions.json', feedUrl: 'https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2' })
   expect(() => Config({ timeoutMs: 0 })).toThrow()
+  for (const input of [{ endpoint: 'ftp://host' }, { endpoint: 'http://user:secret@host/' }, { qualityFilter: '3' }, { category: '9_9' }]) {
+    expect(() => Config(input)).toThrow()
+  }
 })
 
 it('resolves the store path against DSH_HOME and falls back to ~/.dsh', () => {

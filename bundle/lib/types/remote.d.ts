@@ -1,7 +1,7 @@
+import type { SettingsInfo, TestConnectionResult } from './types.ts';
 import type { Preferences } from './preferences.ts';
 import type { Context } from '@deepseek-ai/cordis';
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
-import type Schema from '@deepseek-ai/schemastery';
 import { Config } from './config.ts';
 import type { DownloadService } from './service.ts';
 import type { Candidate, RefreshResult, SubmitRecord, SubmitResult } from './types.ts';
@@ -15,13 +15,19 @@ export type { Config } from './config.ts';
 export declare function resolveStorePath(storePath: string, env?: NodeJS.ProcessEnv): string;
 /** Own the download service and its browser namespace. */
 export declare class DownloadRemote extends TypertRemoteService {
+    private readonly config;
     static inject: string[];
     /** Mount schema shared with the plugin entry. */
-    static get Config(): Schema<Partial<Config>, Config>;
+    static get Config(): typeof Config;
     /** The service the tools and the Remote methods share. */
     readonly service: Omit<DownloadService, 'submissions'>;
     private readonly ready;
     constructor(ctx: Context, config: Config);
+    private currentSettings;
+    /** Read provider choices and effective settings without exposing credentials. */
+    settingsInfo(): Promise<SettingsInfo>;
+    /** Probe a staged endpoint with the current Host credential without saving or submitting. */
+    testConnection(endpoint: string): Promise<TestConnectionResult>;
     /**
      * Read committed search preferences.
      * @returns Committed preferences; persistence failures reject.

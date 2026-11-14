@@ -1,9 +1,11 @@
+import { categoriesFor, classifyConnectionFailure, isValidEndpoint, resolveSettings, sourceKind } from './settings.ts'
+import type { EffectiveSettings } from './settings.ts'
+import type { SettingsInfo, TestConnectionResult } from './types.ts'
 import { createJsonFilePreferencesBackend, openPreferencesStore } from './preferences.ts'
 import type { Preferences } from './preferences.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import type Schema from '@deepseek-ai/schemastery'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { Config } from './config.ts'
@@ -31,7 +33,7 @@ export function resolveStorePath(storePath: string, env: NodeJS.ProcessEnv = pro
 export class DownloadRemote extends TypertRemoteService {
   static inject = ['typert', 'credentials']
   /** Mount schema shared with the plugin entry. */
-  static get Config(): Schema<Partial<Config>, Config> {
+  static get Config(): typeof Config {
     return Config
   }
 
@@ -40,7 +42,7 @@ export class DownloadRemote extends TypertRemoteService {
 
   private readonly ready: Promise<DownloadService>
 
-  constructor(ctx: Context, config: Config) {
+  constructor(ctx: Context, private readonly config: Config) {
     super(ctx, 'download', { namespace: 'download' })
     const storeReady = createPersistentSubmitStore(
       createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)),
@@ -48,14 +50,20 @@ export class DownloadRemote extends TypertRemoteService {
     const preferencesReady = openPreferencesStore(createJsonFilePreferencesBackend(resolveStorePath('downloader/preferences.json')))
     const ready = Promise.all([storeReady, preferencesReady]).then(([store, preferences]) => {
       const client = async () => createAria2Client({
-        endpoint: config.endpoint, timeoutMs: config.timeoutMs,
+        endpoint: config.endpoint.get(), timeoutMs: config.timeoutMs,
         token: (await ctx.credentials.resolve(credentialRef(config.tokenRef)))?.value ?? null,
       })
       return createDownloadService({
         store, preferences,
-        // RSS wiring arrives in the next step; discovery is explicitly empty for now.
-        source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
-        makeSource: keyword => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs }),
+        source: { listCandidates: () => createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs,
+          filters: { kind: sourceKind(config.feedUrl), settings: this.currentSettings() } }).listCandidates() },
+        makeSource: keyword => ({ listCandidates: () => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs,
+          filters: { kind: sourceKind(config.feedUrl), settings: this.currentSettings() } }).listCandidates() }),
+        currentEndpoint: () => this.currentSettings().endpoint,
+        tag: () => {
+          const settings = this.currentSettings()
+          return `${sourceKind(config.feedUrl)}|${settings.qualityFilter}|${settings.category}`
+        },
         downloader: {
           async add(candidate) {
             const uri = candidate.torrentUrl ?? candidate.magnetUri
@@ -88,6 +96,33 @@ export class DownloadRemote extends TypertRemoteService {
       status: async gid => (await ready).status(gid),
       refresh: async () => (await ready).refresh(),
     }
+  }
+
+  private currentSettings(): EffectiveSettings {
+    const qualityFilter = this.config.qualityFilter.get()
+    const category = this.config.category.get()
+    return resolveSettings({ endpoint: this.config.endpoint.get(), feedUrl: this.config.feedUrl,
+      ...(qualityFilter === undefined ? {} : { qualityFilter }),
+      ...(category === undefined ? {} : { category }) })
+  }
+
+  /** Read provider choices and effective settings without exposing credentials. */
+  @Remote('settingsInfo')
+  async settingsInfo(): Promise<SettingsInfo> {
+    const kind = sourceKind(this.config.feedUrl)
+    return { source: { kind, categories: categoriesFor(kind) }, effective: this.currentSettings() }
+  }
+
+  /** Probe a staged endpoint with the current Host credential without saving or submitting. */
+  @Remote('testConnection')
+  async testConnection(endpoint: string): Promise<TestConnectionResult> {
+    endpoint = endpoint.trim()
+    if (!isValidEndpoint(endpoint)) return { ok: false, reason: 'invalid' }
+    try {
+      const client = createAria2Client({ endpoint, timeoutMs: this.config.timeoutMs,
+        token: (await this.ctx.credentials.resolve(credentialRef(this.config.tokenRef)))?.value ?? null })
+      return { ok: true, version: (await client.getVersion()).version }
+    } catch (error) { return { ok: false, reason: classifyConnectionFailure(error) } }
   }
 
   /**

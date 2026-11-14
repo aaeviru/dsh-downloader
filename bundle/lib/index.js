@@ -4,6 +4,210 @@ import { dirname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { Context, Service } from "@deepseek-ai/cordis";
 import { homedir } from "node:os";
+//#region lib/types/catalog.js
+/** Supported quality filters. */
+const QUALITY_FILTERS = [
+	"0",
+	"1",
+	"2"
+];
+/** Supported Sukebei category codes. */
+const SUKEBEI_CODES = [
+	"0_0",
+	"1_0",
+	"1_1",
+	"1_2",
+	"1_3",
+	"1_4",
+	"1_5",
+	"2_0",
+	"2_1",
+	"2_2"
+];
+/** Categories with locale keys shared by Host and client. */
+const SUKEBEI_CATEGORIES = SUKEBEI_CODES.map((code) => ({
+	code,
+	label: `category.${code}`
+}));
+/** Config schema category choices. */
+const CATEGORY_CODES = SUKEBEI_CODES;
+//#endregion
+//#region lib/types/aria2.js
+/** Base failure type for aria2 calls, including authentication, deadline, and protocol failures. */
+var Aria2Error = class extends Error {};
+/** JSON-RPC error code 1 returned by aria2; the message identifies the method with the token removed. */
+var Aria2AuthError = class extends Aria2Error {};
+/** The call deadline expired; cancellation does not establish whether aria2 accepted the operation. */
+var Aria2TimeoutError = class extends Aria2Error {};
+/** Transport, HTTP, or response-validation failure with token-redacted response diagnostics. */
+var Aria2ProtocolError = class extends Aria2Error {
+	/** HTTP status, or zero when no response was received. */
+	status;
+	/** Response text with the configured token removed, truncated to 200 UTF-8 bytes before decoding. */
+	bodyPreview;
+	constructor(message, status, bodyPreview) {
+		super(message);
+		this.status = status;
+		this.bodyPreview = bodyPreview;
+	}
+};
+function record(value) {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error();
+	return value;
+}
+function string(value) {
+	if (typeof value !== "string") throw new Error();
+	return value;
+}
+function length(value) {
+	if (value === void 0) return null;
+	const raw = string(value);
+	if (!/^\d+$/.test(raw) || !Number.isFinite(Number(raw))) throw new Error();
+	return Number(raw);
+}
+const fetchTransport = (request) => fetch(request.url, {
+	method: "POST",
+	headers: request.headers,
+	body: request.body,
+	signal: request.signal
+});
+/**
+* Create a client. `transport` defaults to a thin wrapper over global fetch.
+* @param config - Endpoint, authentication token, and deadline covering transport and response parsing.
+* @param transport - Sends each JSON-RPC request, using its signal for cancellation.
+* @returns A client that validates responses and reports authentication, timeout, or protocol failures.
+*/
+function createAria2Client(config, transport = fetchTransport) {
+	const { endpoint, timeoutMs } = config;
+	const token = config.token === "" ? null : config.token;
+	let id = 0;
+	const sanitize = (value) => {
+		while (token && value.includes(token)) value = value.split(token).join("");
+		return value;
+	};
+	async function call(method, args, parse) {
+		const controller = new AbortController();
+		let status = 0;
+		let body = "";
+		let timer;
+		const deadline = new Promise((_resolve, reject) => {
+			timer = setTimeout(() => {
+				controller.abort();
+				reject(new Aria2TimeoutError(sanitize(method)));
+			}, timeoutMs);
+		});
+		try {
+			const requestId = ++id;
+			const operation = async () => {
+				const response = await transport({
+					url: endpoint,
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						jsonrpc: "2.0",
+						id: requestId,
+						method,
+						params: token === null ? args : [`token:${token}`, ...args]
+					}),
+					signal: controller.signal
+				});
+				status = response.status;
+				body = await response.text();
+				if (!response.ok) throw new Error();
+				const envelope = record(JSON.parse(body));
+				if (envelope.jsonrpc !== "2.0" || envelope.id !== requestId) throw new Error();
+				if (envelope.error !== void 0) {
+					if (record(envelope.error).code === 1) throw new Aria2AuthError(sanitize(method));
+					throw new Error();
+				}
+				return parse(envelope.result);
+			};
+			return await Promise.race([operation(), deadline]);
+		} catch (error) {
+			if (controller.signal.aborted) throw new Aria2TimeoutError(sanitize(method));
+			if (error instanceof Aria2AuthError) throw error;
+			throw new Aria2ProtocolError(sanitize(method), status, Buffer.from(sanitize(body), "utf8").subarray(0, 200).toString("utf8"));
+		} finally {
+			clearTimeout(timer);
+		}
+	}
+	return {
+		getVersion: () => call("aria2.getVersion", [], (value) => {
+			const result = record(value);
+			const features = result.enabledFeatures ?? [];
+			if (!Array.isArray(features)) throw new Error();
+			return {
+				version: string(result.version),
+				enabledFeatures: features.map(string)
+			};
+		}),
+		addUri: (uris, options) => call("aria2.addUri", options === void 0 ? [uris] : [uris, options], (value) => ({ gid: string(value) })),
+		tellStatus: (gid) => call("aria2.tellStatus", [gid], (value) => {
+			const result = record(value);
+			const followedBy = result.followedBy === void 0 ? [] : result.followedBy;
+			if (!Array.isArray(followedBy)) throw new Error();
+			return {
+				gid: string(result.gid),
+				status: string(result.status),
+				followedBy: followedBy.map(string),
+				totalLength: length(result.totalLength),
+				completedLength: length(result.completedLength),
+				errorMessage: result.errorMessage === void 0 ? null : string(result.errorMessage)
+			};
+		})
+	};
+}
+//#endregion
+//#region lib/types/settings.js
+/** Identify a feed provider by hostname; malformed URLs are unknown. */
+function sourceKind(feedUrl) {
+	try {
+		const hostname = new URL(feedUrl).hostname;
+		if (hostname === "sukebei.nyaa.si") return "sukebei";
+		if (hostname === "nyaa.si") return "nyaa";
+	} catch {
+		return "unknown";
+	}
+	return "unknown";
+}
+/** Return category choices only for supported Sukebei feeds. */
+function categoriesFor(kind) {
+	return kind === "sukebei" ? SUKEBEI_CATEGORIES : [];
+}
+/** Validate an HTTP(S) endpoint without userinfo, matching the Config pattern. */
+function isValidEndpoint(value) {
+	return /^https?:\/\/[^@/?#\s]+(?:\/[^\s]*)?$/.test(value);
+}
+/** Resolve explicit valid filters, then legacy URL values, then defaults. */
+function resolveSettings(input) {
+	let params = new URLSearchParams();
+	try {
+		params = new URL(input.feedUrl).searchParams;
+	} catch {}
+	return {
+		endpoint: input.endpoint,
+		qualityFilter: QUALITY_FILTERS.find((value) => value === input.qualityFilter) ?? QUALITY_FILTERS.find((value) => value === params.get("f")) ?? "2",
+		category: SUKEBEI_CODES.find((value) => value === input.category) ?? SUKEBEI_CODES.find((value) => value === params.get("c")) ?? "0_0"
+	};
+}
+/** Build a request with at most one q/f/c and provider-appropriate filters. */
+function buildFeedUrl(feedUrl, kind, settings, keyword) {
+	const url = new URL(feedUrl);
+	const query = keyword !== void 0 && keyword.trim() !== "" ? keyword : url.searchParams.get("q");
+	if (query !== null) url.searchParams.set("q", query);
+	if (kind === "sukebei") url.searchParams.set("f", settings.qualityFilter);
+	else url.searchParams.delete("f");
+	if (kind === "sukebei") url.searchParams.set("c", settings.category);
+	else url.searchParams.delete("c");
+	return url.toString();
+}
+/** Classify connection failures without exposing server diagnostics or secrets. */
+function classifyConnectionFailure(error) {
+	if (error instanceof Aria2AuthError) return "auth";
+	if (error instanceof Aria2TimeoutError) return "timeout";
+	if (error instanceof Aria2ProtocolError) return "protocol";
+	return "unreachable";
+}
+//#endregion
 //#region lib/types/preferences.js
 /** Host-owned search keywords, persisted independently from download submissions. */
 /**
@@ -1232,140 +1436,16 @@ defineMethod("transform", [
 ], ({ inner }, isInner) => inner.toString(isInner));
 //#endregion
 //#region lib/types/config.js
-/** Downloader mount settings shared by the plugin entry and the Remote service. */
 /** Parse mount settings and supply defaults for omitted fields. */
 const Config = Schema.object({
-	endpoint: Schema.string().default("http://10.0.0.7:8082/jsonrpc"),
+	endpoint: Schema.string().pattern(/^https?:\/\/[^@/?#\s]+(?:\/[^\s]*)?$/).default("http://10.0.0.7:8082/jsonrpc").volatile(),
+	qualityFilter: Schema.union(QUALITY_FILTERS).volatile(),
+	category: Schema.union(CATEGORY_CODES).volatile(),
 	tokenRef: Schema.string().default("ARIA2_TOKEN"),
 	timeoutMs: Schema.number().min(1).default(15e3),
 	storePath: Schema.string().default("downloader/submissions.json"),
 	feedUrl: Schema.string().default("https://sukebei.nyaa.si/?page=rss&q=FC2-PPV&c=0_0&f=2")
 });
-//#endregion
-//#region lib/types/aria2.js
-/** Base failure type for aria2 calls, including authentication, deadline, and protocol failures. */
-var Aria2Error = class extends Error {};
-/** JSON-RPC error code 1 returned by aria2; the message identifies the method with the token removed. */
-var Aria2AuthError = class extends Aria2Error {};
-/** The call deadline expired; cancellation does not establish whether aria2 accepted the operation. */
-var Aria2TimeoutError = class extends Aria2Error {};
-/** Transport, HTTP, or response-validation failure with token-redacted response diagnostics. */
-var Aria2ProtocolError = class extends Aria2Error {
-	/** HTTP status, or zero when no response was received. */
-	status;
-	/** Response text with the configured token removed, truncated to 200 UTF-8 bytes before decoding. */
-	bodyPreview;
-	constructor(message, status, bodyPreview) {
-		super(message);
-		this.status = status;
-		this.bodyPreview = bodyPreview;
-	}
-};
-function record(value) {
-	if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error();
-	return value;
-}
-function string(value) {
-	if (typeof value !== "string") throw new Error();
-	return value;
-}
-function length(value) {
-	if (value === void 0) return null;
-	const raw = string(value);
-	if (!/^\d+$/.test(raw) || !Number.isFinite(Number(raw))) throw new Error();
-	return Number(raw);
-}
-const fetchTransport = (request) => fetch(request.url, {
-	method: "POST",
-	headers: request.headers,
-	body: request.body,
-	signal: request.signal
-});
-/**
-* Create a client. `transport` defaults to a thin wrapper over global fetch.
-* @param config - Endpoint, authentication token, and deadline covering transport and response parsing.
-* @param transport - Sends each JSON-RPC request, using its signal for cancellation.
-* @returns A client that validates responses and reports authentication, timeout, or protocol failures.
-*/
-function createAria2Client(config, transport = fetchTransport) {
-	const { endpoint, timeoutMs } = config;
-	const token = config.token === "" ? null : config.token;
-	let id = 0;
-	const sanitize = (value) => {
-		while (token && value.includes(token)) value = value.split(token).join("");
-		return value;
-	};
-	async function call(method, args, parse) {
-		const controller = new AbortController();
-		let status = 0;
-		let body = "";
-		let timer;
-		const deadline = new Promise((_resolve, reject) => {
-			timer = setTimeout(() => {
-				controller.abort();
-				reject(new Aria2TimeoutError(sanitize(method)));
-			}, timeoutMs);
-		});
-		try {
-			const requestId = ++id;
-			const operation = async () => {
-				const response = await transport({
-					url: endpoint,
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						jsonrpc: "2.0",
-						id: requestId,
-						method,
-						params: token === null ? args : [`token:${token}`, ...args]
-					}),
-					signal: controller.signal
-				});
-				status = response.status;
-				body = await response.text();
-				if (!response.ok) throw new Error();
-				const envelope = record(JSON.parse(body));
-				if (envelope.jsonrpc !== "2.0" || envelope.id !== requestId) throw new Error();
-				if (envelope.error !== void 0) {
-					if (record(envelope.error).code === 1) throw new Aria2AuthError(sanitize(method));
-					throw new Error();
-				}
-				return parse(envelope.result);
-			};
-			return await Promise.race([operation(), deadline]);
-		} catch (error) {
-			if (controller.signal.aborted) throw new Aria2TimeoutError(sanitize(method));
-			if (error instanceof Aria2AuthError) throw error;
-			throw new Aria2ProtocolError(sanitize(method), status, Buffer.from(sanitize(body), "utf8").subarray(0, 200).toString("utf8"));
-		} finally {
-			clearTimeout(timer);
-		}
-	}
-	return {
-		getVersion: () => call("aria2.getVersion", [], (value) => {
-			const result = record(value);
-			const features = result.enabledFeatures ?? [];
-			if (!Array.isArray(features)) throw new Error();
-			return {
-				version: string(result.version),
-				enabledFeatures: features.map(string)
-			};
-		}),
-		addUri: (uris, options) => call("aria2.addUri", options === void 0 ? [uris] : [uris, options], (value) => ({ gid: string(value) })),
-		tellStatus: (gid) => call("aria2.tellStatus", [gid], (value) => {
-			const result = record(value);
-			const followedBy = result.followedBy === void 0 ? [] : result.followedBy;
-			if (!Array.isArray(followedBy)) throw new Error();
-			return {
-				gid: string(result.gid),
-				status: string(result.status),
-				followedBy: followedBy.map(string),
-				totalLength: length(result.totalLength),
-				completedLength: length(result.completedLength),
-				errorMessage: result.errorMessage === void 0 ? null : string(result.errorMessage)
-			};
-		})
-	};
-}
 //#endregion
 //#region lib/types/candidate.js
 /**
@@ -1418,7 +1498,7 @@ function createDownloadCoordinator(deps) {
 		inFlight.set(key, true);
 		try {
 			const { gid } = await downloader.add(candidate);
-			store.record(key, gid);
+			store.record(key, gid, deps.endpoint?.());
 			return { gid };
 		} finally {
 			inFlight.delete(key);
@@ -1441,18 +1521,55 @@ var UnknownCandidateError = class extends Error {
 		this.candidateId = candidateId;
 	}
 };
+function safeEndpoint(value) {
+	try {
+		const url = new URL(value);
+		return `${url.protocol}//${url.host}${url.pathname}`;
+	} catch {
+		return "[invalid endpoint]";
+	}
+}
+/** Status cannot be queried on a different aria2 server. */
+var CrossEndpointError = class extends Error {
+	constructor(gid, recorded, current) {
+		super(`GID "${gid}" was submitted to ${safeEndpoint(recorded)} but the current aria2 endpoint is ${safeEndpoint(current)}; status is unavailable. Restore the original endpoint to query it.`);
+		this.name = "CrossEndpointError";
+	}
+};
+/** Old records cannot safely identify the aria2 server that accepted them. */
+var LegacySubmitRecordError = class extends Error {
+	constructor(gid) {
+		super(`GID "${gid}" has no recorded aria2 endpoint; status is unavailable. Check the original aria2 server directly or explicitly resubmit the candidate.`);
+		this.name = "LegacySubmitRecordError";
+	}
+};
 /**
 * Create the service over the three injected seams.
 * @param deps - Discovery, optional keyword-scoped discovery, downloader, and submission storage providers.
 * @returns A service with a private candidate cache; unknown submission identifiers reject with UnknownCandidateError.
 */
 function createDownloadService(deps) {
-	const coordinator = createDownloadCoordinator(deps);
+	const coordinator = createDownloadCoordinator({
+		...deps,
+		endpoint: () => deps.currentEndpoint?.()
+	});
 	let source = deps.source;
 	let cache;
+	let keyword;
+	function invalidate() {
+		if (cache && cache.tag !== (deps.tag?.() ?? "")) {
+			cache = void 0;
+			source = keyword !== void 0 && deps.makeSource ? deps.makeSource(keyword) : deps.source;
+		}
+	}
 	async function discover() {
-		cache = dedupeCandidates(await source.listCandidates());
-		return cache;
+		const tag = deps.tag?.() ?? "";
+		const candidates = dedupeCandidates(await source.listCandidates());
+		cache = {
+			tag,
+			candidates
+		};
+		return candidates;
 	}
 	return {
 		async preferences() {
@@ -1462,17 +1579,20 @@ function createDownloadService(deps) {
 		toggleFavorite: (keyword) => deps.preferences.toggleFavorite(keyword),
 		deleteSearch: (keyword) => deps.preferences.deleteSearch(keyword),
 		clearHistory: () => deps.preferences.clearHistory(),
-		async search(keyword) {
-			keyword = keyword.trim();
-			if (!keyword) return [];
+		async search(value) {
+			invalidate();
+			value = value.trim();
+			if (!value) return [];
+			keyword = value;
 			source = deps.makeSource ? deps.makeSource(keyword) : deps.source;
 			return discover();
 		},
 		async listCandidates() {
-			return cache ?? discover();
+			invalidate();
+			return cache?.candidates ?? discover();
 		},
 		async add(candidateId) {
-			const candidate = (!cache || cache.length === 0 ? await discover() : cache).find((candidate) => candidate.id === candidateId);
+			const candidate = (!cache || cache.candidates.length === 0 ? await discover() : cache.candidates).find((candidate) => candidate.id === candidateId);
 			if (!candidate) throw new UnknownCandidateError(candidateId);
 			return coordinator.submit(candidate);
 		},
@@ -1480,14 +1600,23 @@ function createDownloadService(deps) {
 			return deps.store.list();
 		},
 		async resubmit(candidateId) {
-			const candidate = cache?.find((candidate) => candidate.id === candidateId) ?? (await discover()).find((candidate) => candidate.id === candidateId);
+			const candidate = cache?.candidates.find((candidate) => candidate.id === candidateId) ?? (await discover()).find((candidate) => candidate.id === candidateId);
 			if (!candidate) throw new UnknownCandidateError(candidateId);
 			return coordinator.resubmit(candidate);
 		},
-		status(gid) {
+		async status(gid) {
+			const record = deps.store.list().find((record) => record.gid === gid);
+			if (record) {
+				if (record.endpoint === void 0) throw new LegacySubmitRecordError(gid);
+				if (deps.currentEndpoint) {
+					const current = deps.currentEndpoint();
+					if (record.endpoint !== current) throw new CrossEndpointError(gid, record.endpoint, current);
+				}
+			}
 			return deps.downloader.status(gid);
 		},
 		async refresh() {
+			invalidate();
 			const candidates = await discover();
 			return {
 				candidates,
@@ -6663,6 +6792,7 @@ function createRssSource(options) {
 	const transport = options.transport ?? defaultTransport;
 	const sourceId = new URL(options.feedUrl).host;
 	const requestUrl = () => {
+		if (options.filters) return buildFeedUrl(options.feedUrl, options.filters.kind, options.filters.settings, options.keyword);
 		if (options.keyword === void 0 || options.keyword.trim() === "") return options.feedUrl;
 		const url = new URL(options.feedUrl);
 		url.searchParams.set("q", options.keyword);
@@ -6697,10 +6827,11 @@ async function createPersistentSubmitStore(backend) {
 	return {
 		has: (key) => records.has(key),
 		list,
-		record(key, gid) {
+		record(key, gid, endpoint) {
 			records.set(key, {
 				key,
-				gid
+				gid,
+				...endpoint === void 0 ? {} : { endpoint }
 			});
 			const snapshot = list();
 			queue = queue.then(() => backend.save(snapshot)).catch((error) => {
@@ -6741,14 +6872,15 @@ function createJsonFileSubmitStoreBackend(path) {
 				const value = JSON.parse(contents);
 				if (!Array.isArray(value)) throw new Error();
 				return value.map((record) => {
-					if (typeof record !== "object" || record === null || !("key" in record) || !("gid" in record) || typeof record.key !== "string" || typeof record.gid !== "string") throw new Error();
+					if (typeof record !== "object" || record === null || !("key" in record) || !("gid" in record) || typeof record.key !== "string" || typeof record.gid !== "string" || "endpoint" in record && typeof record.endpoint !== "string") throw new Error();
 					return {
 						key: record.key,
-						gid: record.gid
+						gid: record.gid,
+						..."endpoint" in record ? { endpoint: record.endpoint } : {}
 					};
 				});
 			} catch {
-				throw new Error(`Invalid submit store at ${path}: expected a JSON array of { key: string, gid: string } records`);
+				throw new Error(`Invalid submit store at ${path}: expected a JSON array of { key: string, gid: string, endpoint?: string } records`);
 			}
 		},
 		async save(records) {
@@ -6820,6 +6952,8 @@ function resolveStorePath(storePath, env = process.env) {
 let DownloadRemote = (() => {
 	let _classSuper = TypertRemoteService;
 	let _instanceExtraInitializers = [];
+	let _settingsInfo_decorators;
+	let _testConnection_decorators;
 	let _preferences_decorators;
 	let _recordSearch_decorators;
 	let _toggleFavorite_decorators;
@@ -6835,6 +6969,8 @@ let DownloadRemote = (() => {
 	return class DownloadRemote extends _classSuper {
 		static {
 			const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+			_settingsInfo_decorators = [Remote("settingsInfo")];
+			_testConnection_decorators = [Remote("testConnection")];
 			_preferences_decorators = [Remote("preferences")];
 			_recordSearch_decorators = [Remote("recordSearch")];
 			_toggleFavorite_decorators = [Remote("toggleFavorite")];
@@ -6847,6 +6983,28 @@ let DownloadRemote = (() => {
 			_resubmit_decorators = [Remote("resubmit")];
 			_status_decorators = [Remote("status")];
 			_refresh_decorators = [Remote("refresh")];
+			__esDecorate$1(this, null, _settingsInfo_decorators, {
+				kind: "method",
+				name: "settingsInfo",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "settingsInfo" in obj,
+					get: (obj) => obj.settingsInfo
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
+			__esDecorate$1(this, null, _testConnection_decorators, {
+				kind: "method",
+				name: "testConnection",
+				static: false,
+				private: false,
+				access: {
+					has: (obj) => "testConnection" in obj,
+					get: (obj) => obj.testConnection
+				},
+				metadata: _metadata
+			}, null, _instanceExtraInitializers);
 			__esDecorate$1(this, null, _preferences_decorators, {
 				kind: "method",
 				name: "preferences",
@@ -6986,36 +7144,51 @@ let DownloadRemote = (() => {
 				value: _metadata
 			});
 		}
+		config = __runInitializers$1(this, _instanceExtraInitializers);
 		static inject = ["typert", "credentials"];
 		/** Mount schema shared with the plugin entry. */
 		static get Config() {
 			return Config;
 		}
 		/** The service the tools and the Remote methods share. */
-		service = __runInitializers$1(this, _instanceExtraInitializers);
+		service;
 		ready;
 		constructor(ctx, config) {
 			super(ctx, "download", { namespace: "download" });
+			this.config = config;
 			const storeReady = createPersistentSubmitStore(createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)));
 			const preferencesReady = openPreferencesStore(createJsonFilePreferencesBackend(resolveStorePath("downloader/preferences.json")));
 			const ready = Promise.all([storeReady, preferencesReady]).then(([store, preferences]) => {
 				const client = async () => createAria2Client({
-					endpoint: config.endpoint,
+					endpoint: config.endpoint.get(),
 					timeoutMs: config.timeoutMs,
 					token: (await ctx.credentials.resolve(credentialRef(config.tokenRef)))?.value ?? null
 				});
 				return createDownloadService({
 					store,
 					preferences,
-					source: createRssSource({
+					source: { listCandidates: () => createRssSource({
 						feedUrl: config.feedUrl,
-						timeoutMs: config.timeoutMs
-					}),
-					makeSource: (keyword) => createRssSource({
+						timeoutMs: config.timeoutMs,
+						filters: {
+							kind: sourceKind(config.feedUrl),
+							settings: this.currentSettings()
+						}
+					}).listCandidates() },
+					makeSource: (keyword) => ({ listCandidates: () => createRssSource({
 						feedUrl: config.feedUrl,
 						keyword,
-						timeoutMs: config.timeoutMs
-					}),
+						timeoutMs: config.timeoutMs,
+						filters: {
+							kind: sourceKind(config.feedUrl),
+							settings: this.currentSettings()
+						}
+					}).listCandidates() }),
+					currentEndpoint: () => this.currentSettings().endpoint,
+					tag: () => {
+						const settings = this.currentSettings();
+						return `${sourceKind(config.feedUrl)}|${settings.qualityFilter}|${settings.category}`;
+					},
 					downloader: {
 						async add(candidate) {
 							const uri = candidate.torrentUrl ?? candidate.magnetUri;
@@ -7049,6 +7222,50 @@ let DownloadRemote = (() => {
 				status: async (gid) => (await ready).status(gid),
 				refresh: async () => (await ready).refresh()
 			};
+		}
+		currentSettings() {
+			const qualityFilter = this.config.qualityFilter.get();
+			const category = this.config.category.get();
+			return resolveSettings({
+				endpoint: this.config.endpoint.get(),
+				feedUrl: this.config.feedUrl,
+				...qualityFilter === void 0 ? {} : { qualityFilter },
+				...category === void 0 ? {} : { category }
+			});
+		}
+		/** Read provider choices and effective settings without exposing credentials. */
+		async settingsInfo() {
+			const kind = sourceKind(this.config.feedUrl);
+			return {
+				source: {
+					kind,
+					categories: categoriesFor(kind)
+				},
+				effective: this.currentSettings()
+			};
+		}
+		/** Probe a staged endpoint with the current Host credential without saving or submitting. */
+		async testConnection(endpoint) {
+			endpoint = endpoint.trim();
+			if (!isValidEndpoint(endpoint)) return {
+				ok: false,
+				reason: "invalid"
+			};
+			try {
+				return {
+					ok: true,
+					version: (await createAria2Client({
+						endpoint,
+						timeoutMs: this.config.timeoutMs,
+						token: (await this.ctx.credentials.resolve(credentialRef(this.config.tokenRef)))?.value ?? null
+					}).getVersion()).version
+				};
+			} catch (error) {
+				return {
+					ok: false,
+					reason: classifyConnectionFailure(error)
+				};
+			}
 		}
 		/**
 		* Read committed search preferences.

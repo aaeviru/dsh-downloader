@@ -14,6 +14,14 @@ export declare class UnknownCandidateError extends Error {
     readonly candidateId: string;
     constructor(candidateId: string);
 }
+/** Status cannot be queried on a different aria2 server. */
+export declare class CrossEndpointError extends Error {
+    constructor(gid: string, recorded: string, current: string);
+}
+/** Old records cannot safely identify the aria2 server that accepted them. */
+export declare class LegacySubmitRecordError extends Error {
+    constructor(gid: string);
+}
 /** Caches discovered candidates for identifier-based submission; search replaces the cache and refresh reloads it. */
 export interface DownloadService {
     /** Read committed keywords without discovery or submission. */
@@ -58,5 +66,7 @@ export declare function createDownloadService(deps: {
     readonly downloader: Downloader;
     readonly preferences: PreferencesStore;
     readonly store: SubmitStore;
+    readonly currentEndpoint?: () => string;
+    readonly tag?: () => string;
 }): DownloadService;
 //# sourceMappingURL=service.d.ts.map

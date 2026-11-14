@@ -24,6 +24,29 @@ export class UnknownCandidateError extends Error {
   }
 }
 
+function safeEndpoint(value: string): string {
+  try {
+    const url = new URL(value)
+    return `${url.protocol}//${url.host}${url.pathname}`
+  } catch { return '[invalid endpoint]' }
+}
+
+/** Status cannot be queried on a different aria2 server. */
+export class CrossEndpointError extends Error {
+  constructor(gid: string, recorded: string, current: string) {
+    super(`GID "${gid}" was submitted to ${safeEndpoint(recorded)} but the current aria2 endpoint is ${safeEndpoint(current)}; status is unavailable. Restore the original endpoint to query it.`)
+    this.name = 'CrossEndpointError'
+  }
+}
+
+/** Old records cannot safely identify the aria2 server that accepted them. */
+export class LegacySubmitRecordError extends Error {
+  constructor(gid: string) {
+    super(`GID "${gid}" has no recorded aria2 endpoint; status is unavailable. Check the original aria2 server directly or explicitly resubmit the candidate.`)
+    this.name = 'LegacySubmitRecordError'
+  }
+}
+
 /** Caches discovered candidates for identifier-based submission; search replaces the cache and refresh reloads it. */
 export interface DownloadService {
   /** Read committed keywords without discovery or submission. */
@@ -67,14 +90,26 @@ export function createDownloadService(deps: {
   readonly downloader: Downloader
   readonly preferences: PreferencesStore
   readonly store: SubmitStore
+  readonly currentEndpoint?: () => string
+  readonly tag?: () => string
 }): DownloadService {
-  const coordinator = createDownloadCoordinator(deps)
+  const coordinator = createDownloadCoordinator({ ...deps, endpoint: () => deps.currentEndpoint?.() })
   let source = deps.source
-  let cache: readonly Candidate[] | undefined
+  let cache: { tag: string; candidates: readonly Candidate[] } | undefined
+  let keyword: string | undefined
+
+  function invalidate(): void {
+    if (cache && cache.tag !== (deps.tag?.() ?? '')) {
+      cache = undefined
+      source = keyword !== undefined && deps.makeSource ? deps.makeSource(keyword) : deps.source
+    }
+  }
 
   async function discover(): Promise<readonly Candidate[]> {
-    cache = dedupeCandidates(await source.listCandidates())
-    return cache
+    const tag = deps.tag?.() ?? ''
+    const candidates = dedupeCandidates(await source.listCandidates())
+    cache = { tag, candidates }
+    return candidates
   }
 
   return {
@@ -83,17 +118,20 @@ export function createDownloadService(deps: {
     toggleFavorite: keyword => deps.preferences.toggleFavorite(keyword),
     deleteSearch: keyword => deps.preferences.deleteSearch(keyword),
     clearHistory: () => deps.preferences.clearHistory(),
-    async search(keyword) {
-      keyword = keyword.trim()
-      if (!keyword) return []
+    async search(value) {
+      invalidate()
+      value = value.trim()
+      if (!value) return []
+      keyword = value
       source = deps.makeSource ? deps.makeSource(keyword) : deps.source
       return discover()
     },
     async listCandidates() {
-      return cache ?? discover()
+      invalidate()
+      return cache?.candidates ?? discover()
     },
     async add(candidateId) {
-      const candidates = !cache || cache.length === 0 ? await discover() : cache
+      const candidates = !cache || cache.candidates.length === 0 ? await discover() : cache.candidates
       const candidate = candidates.find(candidate => candidate.id === candidateId)
       if (!candidate) throw new UnknownCandidateError(candidateId)
       return coordinator.submit(candidate)
@@ -102,15 +140,24 @@ export function createDownloadService(deps: {
       return deps.store.list()
     },
     async resubmit(candidateId) {
-      const candidate = cache?.find(candidate => candidate.id === candidateId)
+      const candidate = cache?.candidates.find(candidate => candidate.id === candidateId)
         ?? (await discover()).find(candidate => candidate.id === candidateId)
       if (!candidate) throw new UnknownCandidateError(candidateId)
       return coordinator.resubmit(candidate)
     },
-    status(gid) {
+    async status(gid) {
+      const record = deps.store.list().find(record => record.gid === gid)
+      if (record) {
+        if (record.endpoint === undefined) throw new LegacySubmitRecordError(gid)
+        if (deps.currentEndpoint) {
+          const current = deps.currentEndpoint()
+          if (record.endpoint !== current) throw new CrossEndpointError(gid, record.endpoint, current)
+        }
+      }
       return deps.downloader.status(gid)
     },
     async refresh() {
+      invalidate()
       const candidates = await discover()
       return {
         candidates,

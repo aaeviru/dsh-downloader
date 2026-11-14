@@ -24,13 +24,14 @@ export function createJsonFileSubmitStoreBackend(path) {
                     throw new Error();
                 return value.map((record) => {
                     if (typeof record !== 'object' || record === null || !('key' in record) || !('gid' in record)
-                        || typeof record.key !== 'string' || typeof record.gid !== 'string')
+                        || typeof record.key !== 'string' || typeof record.gid !== 'string'
+                        || ('endpoint' in record && typeof record.endpoint !== 'string'))
                         throw new Error();
-                    return { key: record.key, gid: record.gid };
+                    return { key: record.key, gid: record.gid, ...('endpoint' in record ? { endpoint: record.endpoint } : {}) };
                 });
             }
             catch {
-                throw new Error(`Invalid submit store at ${path}: expected a JSON array of { key: string, gid: string } records`);
+                throw new Error(`Invalid submit store at ${path}: expected a JSON array of { key: string, gid: string, endpoint?: string } records`);
             }
         },
         async save(records) {
