@@ -17,11 +17,12 @@ export interface Downloader {
 export interface SubmitRecord {
     readonly key: string;
     readonly gid: string;
+    readonly endpoint?: string;
 }
 /** Tracks accepted submissions; every key reported by has must have a matching record in list. */
 export interface SubmitStore {
     has(key: string): boolean;
-    record(key: string, gid: string): void;
+    record(key: string, gid: string, endpoint?: string): void;
     list(): readonly SubmitRecord[];
 }
 /** Distinguishes a new acceptance from a recorded, pending, or unsupported submission without treating skips as failures. */
@@ -52,5 +53,6 @@ export interface DownloadCoordinator {
 export declare function createDownloadCoordinator(deps: {
     readonly downloader: Downloader;
     readonly store: SubmitStore;
+    readonly endpoint?: () => string | undefined;
 }): DownloadCoordinator;
 //# sourceMappingURL=coordinator.d.ts.map

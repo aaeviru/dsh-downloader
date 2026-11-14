@@ -32,6 +32,7 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     if (target) Object.defineProperty(target, contextIn.name, descriptor);
     done = true;
 };
+import { categoriesFor, classifyConnectionFailure, isValidEndpoint, resolveSettings, sourceKind } from "./settings.js";
 import { createJsonFilePreferencesBackend, openPreferencesStore } from "./preferences.js";
 import { credentialRef } from '@deepseek-ai/dsh-credentials';
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
@@ -56,6 +57,8 @@ export function resolveStorePath(storePath, env = process.env) {
 let DownloadRemote = (() => {
     let _classSuper = TypertRemoteService;
     let _instanceExtraInitializers = [];
+    let _settingsInfo_decorators;
+    let _testConnection_decorators;
     let _preferences_decorators;
     let _recordSearch_decorators;
     let _toggleFavorite_decorators;
@@ -71,6 +74,8 @@ let DownloadRemote = (() => {
     return class DownloadRemote extends _classSuper {
         static {
             const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            _settingsInfo_decorators = [Remote('settingsInfo')];
+            _testConnection_decorators = [Remote('testConnection')];
             _preferences_decorators = [Remote('preferences')];
             _recordSearch_decorators = [Remote('recordSearch')];
             _toggleFavorite_decorators = [Remote('toggleFavorite')];
@@ -83,6 +88,8 @@ let DownloadRemote = (() => {
             _resubmit_decorators = [Remote('resubmit')];
             _status_decorators = [Remote('status')];
             _refresh_decorators = [Remote('refresh')];
+            __esDecorate(this, null, _settingsInfo_decorators, { kind: "method", name: "settingsInfo", static: false, private: false, access: { has: obj => "settingsInfo" in obj, get: obj => obj.settingsInfo }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _testConnection_decorators, { kind: "method", name: "testConnection", static: false, private: false, access: { has: obj => "testConnection" in obj, get: obj => obj.testConnection }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _preferences_decorators, { kind: "method", name: "preferences", static: false, private: false, access: { has: obj => "preferences" in obj, get: obj => obj.preferences }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _recordSearch_decorators, { kind: "method", name: "recordSearch", static: false, private: false, access: { has: obj => "recordSearch" in obj, get: obj => obj.recordSearch }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _toggleFavorite_decorators, { kind: "method", name: "toggleFavorite", static: false, private: false, access: { has: obj => "toggleFavorite" in obj, get: obj => obj.toggleFavorite }, metadata: _metadata }, null, _instanceExtraInitializers);
@@ -97,28 +104,36 @@ let DownloadRemote = (() => {
             __esDecorate(this, null, _refresh_decorators, { kind: "method", name: "refresh", static: false, private: false, access: { has: obj => "refresh" in obj, get: obj => obj.refresh }, metadata: _metadata }, null, _instanceExtraInitializers);
             if (_metadata) Object.defineProperty(this, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         }
+        config = __runInitializers(this, _instanceExtraInitializers);
         static inject = ['typert', 'credentials'];
         /** Mount schema shared with the plugin entry. */
         static get Config() {
             return Config;
         }
         /** The service the tools and the Remote methods share. */
-        service = __runInitializers(this, _instanceExtraInitializers);
+        service;
         ready;
         constructor(ctx, config) {
             super(ctx, 'download', { namespace: 'download' });
+            this.config = config;
             const storeReady = createPersistentSubmitStore(createJsonFileSubmitStoreBackend(resolveStorePath(config.storePath)));
             const preferencesReady = openPreferencesStore(createJsonFilePreferencesBackend(resolveStorePath('downloader/preferences.json')));
             const ready = Promise.all([storeReady, preferencesReady]).then(([store, preferences]) => {
                 const client = async () => createAria2Client({
-                    endpoint: config.endpoint, timeoutMs: config.timeoutMs,
+                    endpoint: config.endpoint.get(), timeoutMs: config.timeoutMs,
                     token: (await ctx.credentials.resolve(credentialRef(config.tokenRef)))?.value ?? null,
                 });
                 return createDownloadService({
                     store, preferences,
-                    // RSS wiring arrives in the next step; discovery is explicitly empty for now.
-                    source: createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs }),
-                    makeSource: keyword => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs }),
+                    source: { listCandidates: () => createRssSource({ feedUrl: config.feedUrl, timeoutMs: config.timeoutMs,
+                            filters: { kind: sourceKind(config.feedUrl), settings: this.currentSettings() } }).listCandidates() },
+                    makeSource: keyword => ({ listCandidates: () => createRssSource({ feedUrl: config.feedUrl, keyword, timeoutMs: config.timeoutMs,
+                            filters: { kind: sourceKind(config.feedUrl), settings: this.currentSettings() } }).listCandidates() }),
+                    currentEndpoint: () => this.currentSettings().endpoint,
+                    tag: () => {
+                        const settings = this.currentSettings();
+                        return `${sourceKind(config.feedUrl)}|${settings.qualityFilter}|${settings.category}`;
+                    },
                     downloader: {
                         async add(candidate) {
                             const uri = candidate.torrentUrl ?? candidate.magnetUri;
@@ -152,6 +167,32 @@ let DownloadRemote = (() => {
                 status: async (gid) => (await ready).status(gid),
                 refresh: async () => (await ready).refresh(),
             };
+        }
+        currentSettings() {
+            const qualityFilter = this.config.qualityFilter.get();
+            const category = this.config.category.get();
+            return resolveSettings({ endpoint: this.config.endpoint.get(), feedUrl: this.config.feedUrl,
+                ...(qualityFilter === undefined ? {} : { qualityFilter }),
+                ...(category === undefined ? {} : { category }) });
+        }
+        /** Read provider choices and effective settings without exposing credentials. */
+        async settingsInfo() {
+            const kind = sourceKind(this.config.feedUrl);
+            return { source: { kind, categories: categoriesFor(kind) }, effective: this.currentSettings() };
+        }
+        /** Probe a staged endpoint with the current Host credential without saving or submitting. */
+        async testConnection(endpoint) {
+            endpoint = endpoint.trim();
+            if (!isValidEndpoint(endpoint))
+                return { ok: false, reason: 'invalid' };
+            try {
+                const client = createAria2Client({ endpoint, timeoutMs: this.config.timeoutMs,
+                    token: (await this.ctx.credentials.resolve(credentialRef(this.config.tokenRef)))?.value ?? null });
+                return { ok: true, version: (await client.getVersion()).version };
+            }
+            catch (error) {
+                return { ok: false, reason: classifyConnectionFailure(error) };
+            }
         }
         /**
          * Read committed search preferences.

@@ -1,8 +1,8 @@
 import { openPreferencesStore } from '../src/preferences.ts'
 import { describe, expect, it, vi } from 'vitest'
 import type { Candidate } from '../src/candidate.ts'
-import type { Downloader, Source, SubmitStore } from '../src/coordinator.ts'
-import { createDownloadService, UnknownCandidateError } from '../src/service.ts'
+import type { Downloader, Source, SubmitStore, SubmitRecord } from '../src/coordinator.ts'
+import { createDownloadService, UnknownCandidateError, CrossEndpointError, LegacySubmitRecordError } from '../src/service.ts'
 
 function candidate(id: string, submittable = true): Candidate {
   return {
@@ -13,11 +13,11 @@ function candidate(id: string, submittable = true): Candidate {
 }
 
 async function setup(entries: readonly Candidate[] = []) {
-  const records = new Map<string, string>()
+  const records = new Map<string, SubmitRecord>()
   const store: SubmitStore = {
     has: key => records.has(key),
-    record: (key, gid) => { records.set(key, gid) },
-    list: () => [...records].map(([key, gid]) => ({ key, gid })),
+    record: (key, gid, endpoint) => { records.set(key, { key, gid, ...(endpoint === undefined ? {} : { endpoint }) }) },
+    list: () => [...records.values()],
   }
   const list = vi.fn<Source['listCandidates']>().mockResolvedValue(entries)
   const add = vi.fn<Downloader['add']>().mockResolvedValue({ gid: 'download' })
@@ -224,4 +224,46 @@ it('C1–C8 preferences methods never discover or submit and blank search is ign
   expect(await service.search('   ')).toEqual([])
   expect(list).not.toHaveBeenCalled()
   expect(add).not.toHaveBeenCalled()
+})
+
+it('invalidates cached discoveries only when the filter tag changes and retains the keyword', async () => {
+  const { deps, list } = await setup([candidate('default')])
+  let tag = 'first'
+  const scoped = vi.fn(async () => [candidate(tag)])
+  const makeSource = vi.fn((_keyword: string) => ({ listCandidates: scoped }))
+  const service = createDownloadService({ ...deps, tag: () => tag, makeSource })
+  await service.listCandidates()
+  await service.listCandidates()
+  expect(list).toHaveBeenCalledOnce()
+  tag = 'second'
+  await service.listCandidates()
+  expect(list).toHaveBeenCalledTimes(2)
+  await service.search(' term ')
+  await service.listCandidates()
+  expect(scoped).toHaveBeenCalledOnce()
+  tag = 'third'
+  expect(await service.listCandidates()).toEqual([candidate('third')])
+  expect(makeSource.mock.calls).toEqual([['term'], ['term']])
+  tag = 'fourth'
+  expect((await service.refresh()).candidates).toEqual([candidate('fourth')])
+  tag = 'fifth'
+  await service.search('next')
+  expect(await service.listCandidates()).toEqual([candidate('fifth')])
+})
+
+it('guards legacy and cross-endpoint statuses while delegating matching and unknown gids', async () => {
+  const { deps, store, status } = await setup()
+  const service = createDownloadService({ ...deps, currentEndpoint: () => 'http://current/jsonrpc' })
+  store.record('legacy', 'old')
+  await expect(service.status('old')).rejects.toBeInstanceOf(LegacySubmitRecordError)
+  store.record('other', 'cross', 'http://user:secret@other/jsonrpc?token=secret#secret')
+  await expect(service.status('cross')).rejects.toBeInstanceOf(CrossEndpointError)
+  await expect(service.status('cross')).rejects.not.toThrow('secret')
+  expect(status).not.toHaveBeenCalled()
+  store.record('matching', 'match', 'http://current/jsonrpc')
+  expect(await service.status('match')).toEqual({ state: 'active' })
+  expect(await service.status('unknown')).toEqual({ state: 'active' })
+  await createDownloadService(deps).status('match')
+  expect(status.mock.calls).toEqual([['match'], ['unknown'], ['match']])
+  expect(new CrossEndpointError('g', 'invalid', 'invalid').message).toContain('[invalid endpoint]')
 })

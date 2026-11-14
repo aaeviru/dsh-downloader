@@ -13,6 +13,8 @@ Searches a configured RSS feed for download candidates, submits one candidate to
 
 The search field offers Host-persisted favorites and the 50 most recent successful non-empty searches in `DSH_HOME/downloader/preferences.json`. Keywords retain case, inner spaces, quotes, and operators; only surrounding whitespace is trimmed. Selecting a saved keyword only fills the field. Favorite, delete, and clear actions never search or submit downloads; clearing history keeps favorites. Writes are serialized and atomically replace an owner-only file. Failed loads never overwrite stored data, and failed saves retain the last committed preferences and show an error in the panel. The file has one Host writer; concurrent processes sharing it are not coordinated.
 
+Quality filter (`f`), category (`c`), and the aria2 endpoint are live-editable on the Plugins page and saved in the active profile patch. Legacy `feedUrl` values for `f` and `c` apply until explicitly set. The token stays on the Host and is sent only to aria2 for authentication; it is never returned to the browser.
+
 ## Table of Contents
 
 - [Use this package](#use-this-package)

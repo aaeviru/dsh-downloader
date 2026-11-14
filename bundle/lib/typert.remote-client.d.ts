@@ -4,7 +4,7 @@ import type {
   TypertRemoteInfo,
   TypertRemoteMethod,
 } from '@deepseek-ai/dsh-typert-protocol'
-import type { Candidate, Preferences, RefreshResult, SubmitRecord, SubmitResult } from '@deepseek-ai/dsh-experimental-downloader/types'
+import type { Candidate, Preferences, RefreshResult, SettingsInfo, SubmitRecord, SubmitResult, TestConnectionResult } from '@deepseek-ai/dsh-experimental-downloader/types'
 
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteNamespace$646f776e6c6f6164 {
@@ -17,8 +17,10 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     refresh: () => Promise<RemoteResult<RefreshResult>>
     resubmit: (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     search: (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
+    settingsInfo: () => Promise<RemoteResult<SettingsInfo>>
     status: (gid: string) => Promise<RemoteResult<{ state: string; }>>
     submissions: () => Promise<RemoteResult<readonly SubmitRecord[]>>
+    testConnection: (endpoint: string) => Promise<RemoteResult<TestConnectionResult>>
     toggleFavorite: (keyword: string) => Promise<RemoteResult<Preferences>>
   }
   interface TypertRemoteMap {
@@ -31,8 +33,10 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'download/refresh': () => Promise<RemoteResult<RefreshResult>>
     'download/resubmit': (candidateId: string) => Promise<RemoteResult<SubmitResult>>
     'download/search': (keyword: string) => Promise<RemoteResult<readonly Candidate[]>>
+    'download/settingsInfo': () => Promise<RemoteResult<SettingsInfo>>
     'download/status': (gid: string) => Promise<RemoteResult<{ state: string; }>>
     'download/submissions': () => Promise<RemoteResult<readonly SubmitRecord[]>>
+    'download/testConnection': (endpoint: string) => Promise<RemoteResult<TestConnectionResult>>
     'download/toggleFavorite': (keyword: string) => Promise<RemoteResult<Preferences>>
   }
   interface TypertRemoteNamespaceMap {
@@ -50,8 +54,10 @@ export declare const TYPERT_REMOTE: TypertRemoteInfo<{
   readonly 'download/refresh': TypertRemoteMethod<{  }, RefreshResult>
   readonly 'download/resubmit': TypertRemoteMethod<{ readonly 'candidateId': string }, SubmitResult>
   readonly 'download/search': TypertRemoteMethod<{ readonly 'keyword': string }, readonly Candidate[]>
+  readonly 'download/settingsInfo': TypertRemoteMethod<{  }, SettingsInfo>
   readonly 'download/status': TypertRemoteMethod<{ readonly 'gid': string }, { state: string; }>
   readonly 'download/submissions': TypertRemoteMethod<{  }, readonly SubmitRecord[]>
+  readonly 'download/testConnection': TypertRemoteMethod<{ readonly 'endpoint': string }, TestConnectionResult>
   readonly 'download/toggleFavorite': TypertRemoteMethod<{ readonly 'keyword': string }, Preferences>
 }>
 export default TYPERT_REMOTE

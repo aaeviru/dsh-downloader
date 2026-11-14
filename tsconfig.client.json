@@ -8,6 +8,7 @@
   "include": [
     "src/client",
     "src/types.ts",
+    "src/catalog.ts",
     "src/candidate.ts",
     "src/coordinator.ts",
     "src/service.ts"

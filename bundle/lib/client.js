@@ -264,6 +264,40 @@ window.__ModuleLoader__.load({
 			"submittable": zod.z.boolean().readonly(),
 			"dedupeKey": zod.z.string().readonly()
 		}));
+		let _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema$value ??= zod.z.object({
+			"source": zod.z.object({
+				"kind": zod.z.union([
+					zod.z.literal("unknown"),
+					zod.z.literal("sukebei"),
+					zod.z.literal("nyaa")
+				]).readonly(),
+				"categories": zod.z.array(zod.z.object({
+					"code": zod.z.string().readonly(),
+					"label": zod.z.string().readonly()
+				})).readonly()
+			}).readonly(),
+			"effective": zod.z.object({
+				"endpoint": zod.z.string().readonly(),
+				"qualityFilter": zod.z.union([
+					zod.z.literal("0"),
+					zod.z.literal("1"),
+					zod.z.literal("2")
+				]).readonly(),
+				"category": zod.z.union([
+					zod.z.literal("0_0"),
+					zod.z.literal("1_0"),
+					zod.z.literal("1_1"),
+					zod.z.literal("1_2"),
+					zod.z.literal("1_3"),
+					zod.z.literal("1_4"),
+					zod.z.literal("1_5"),
+					zod.z.literal("2_0"),
+					zod.z.literal("2_1"),
+					zod.z.literal("2_2")
+				]).readonly()
+			}).readonly()
+		});
 		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_result$schema$value;
@@ -271,8 +305,25 @@ window.__ModuleLoader__.load({
 		let _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_submissions_result$schema$value ??= zod.z.array(zod.z.object({
 			"key": zod.z.string().readonly(),
-			"gid": zod.z.string().readonly()
+			"gid": zod.z.string().readonly(),
+			"endpoint": zod.z.string().readonly().optional()
 		}));
+		let _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema = () => _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema$value ??= zod.z.union([zod.z.object({
+			"ok": zod.z.literal(true).readonly(),
+			"version": zod.z.string().readonly()
+		}), zod.z.object({
+			"ok": zod.z.literal(false).readonly(),
+			"reason": zod.z.union([
+				zod.z.literal("protocol"),
+				zod.z.literal("timeout"),
+				zod.z.literal("invalid"),
+				zod.z.literal("auth"),
+				zod.z.literal("unreachable")
+			]).readonly()
+		})]);
 		let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema = () => _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_result$schema$value;
@@ -292,6 +343,8 @@ window.__ModuleLoader__.load({
 		const _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_search_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_status_parameter_0_strict$schema$value ??= zod.z.string();
+		let _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema$value;
+		const _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema$value ??= zod.z.string();
 		let _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value;
 		const _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema = () => _deepseek_ai_dsh_experimental_downloader_download_toggleFavorite_parameter_0_strict$schema$value ??= zod.z.string();
 		const TYPERT_REMOTE = createTypertRemoteInfo({
@@ -327,7 +380,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 166,
+						"line": 201,
 						"column": 3
 					}
 				},
@@ -359,7 +412,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 137,
+						"line": 172,
 						"column": 3
 					}
 				},
@@ -407,7 +460,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 128,
+						"line": 163,
 						"column": 3
 					}
 				},
@@ -493,7 +546,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 156,
+						"line": 191,
 						"column": 3
 					}
 				},
@@ -525,7 +578,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 98,
+						"line": 133,
 						"column": 3
 					}
 				},
@@ -573,7 +626,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 108,
+						"line": 143,
 						"column": 3
 					}
 				},
@@ -674,7 +727,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 204,
+						"line": 239,
 						"column": 3
 					}
 				},
@@ -708,7 +761,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 185,
+						"line": 220,
 						"column": 3
 					}
 				},
@@ -810,8 +863,93 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 147,
+						"line": 182,
 						"column": 3
+					}
+				},
+				"download/settingsInfo": {
+					service: "download",
+					description: "Read provider choices and effective settings without exposing credentials.",
+					invocation: { kind: "direct" },
+					parameters: [],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#SettingsInfo",
+						create: _deepseek_ai_dsh_experimental_downloader_download_settingsInfo_result$schema,
+						jsonSchema: {
+							"type": "object",
+							"properties": {
+								"source": {
+									"type": "object",
+									"properties": {
+										"kind": {
+											"type": "string",
+											"enum": [
+												"unknown",
+												"sukebei",
+												"nyaa"
+											]
+										},
+										"categories": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"code": { "type": "string" },
+													"label": { "type": "string" }
+												},
+												"required": ["code", "label"],
+												"additionalProperties": true
+											}
+										}
+									},
+									"required": ["kind", "categories"],
+									"additionalProperties": true
+								},
+								"effective": {
+									"type": "object",
+									"properties": {
+										"endpoint": { "type": "string" },
+										"qualityFilter": {
+											"type": "string",
+											"enum": [
+												"0",
+												"1",
+												"2"
+											]
+										},
+										"category": {
+											"type": "string",
+											"enum": [
+												"0_0",
+												"1_0",
+												"1_1",
+												"1_2",
+												"1_3",
+												"1_4",
+												"1_5",
+												"2_0",
+												"2_1",
+												"2_2"
+											]
+										}
+									},
+									"required": [
+										"endpoint",
+										"qualityFilter",
+										"category"
+									],
+									"additionalProperties": true
+								}
+							},
+							"required": ["source", "effective"],
+							"additionalProperties": true
+						}
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 111,
+						"column": 9
 					}
 				},
 				"download/status": {
@@ -849,7 +987,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 195,
+						"line": 230,
 						"column": 3
 					}
 				},
@@ -869,7 +1007,8 @@ window.__ModuleLoader__.load({
 								"type": "object",
 								"properties": {
 									"key": { "type": "string" },
-									"gid": { "type": "string" }
+									"gid": { "type": "string" },
+									"endpoint": { "type": "string" }
 								},
 								"required": ["key", "gid"],
 								"additionalProperties": true
@@ -878,7 +1017,70 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 175,
+						"line": 210,
+						"column": 9
+					}
+				},
+				"download/testConnection": {
+					service: "download",
+					description: "Probe a staged endpoint with the current Host credential without saving or submitting.",
+					invocation: { kind: "direct" },
+					parameters: [{
+						name: "endpoint",
+						source: "json",
+						codec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/testConnection:endpoint",
+							create: _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0$schema,
+							jsonSchema: { "type": "string" }
+						},
+						strictCodec: {
+							mode: "strict",
+							typeSymbol: "@deepseek-ai/dsh-experimental-downloader#download/testConnection:endpoint",
+							create: _deepseek_ai_dsh_experimental_downloader_download_testConnection_parameter_0_strict$schema,
+							jsonSchema: { "type": "string" }
+						}
+					}],
+					result: {
+						mode: "strict",
+						typeSymbol: "@deepseek-ai/dsh-experimental-downloader/types#TestConnectionResult",
+						create: _deepseek_ai_dsh_experimental_downloader_download_testConnection_result$schema,
+						jsonSchema: { "oneOf": [{
+							"type": "object",
+							"properties": {
+								"ok": {
+									"type": "boolean",
+									"const": true
+								},
+								"version": { "type": "string" }
+							},
+							"required": ["ok", "version"],
+							"additionalProperties": true
+						}, {
+							"type": "object",
+							"properties": {
+								"ok": {
+									"type": "boolean",
+									"const": false
+								},
+								"reason": {
+									"type": "string",
+									"enum": [
+										"protocol",
+										"timeout",
+										"invalid",
+										"auth",
+										"unreachable"
+									]
+								}
+							},
+							"required": ["ok", "reason"],
+							"additionalProperties": true
+						}] }
+					},
+					sourceLocation: {
+						"file": "packages/experimental/dsh-downloader/src/remote.ts",
+						"line": 118,
 						"column": 9
 					}
 				},
@@ -926,7 +1128,7 @@ window.__ModuleLoader__.load({
 					},
 					sourceLocation: {
 						"file": "packages/experimental/dsh-downloader/src/remote.ts",
-						"line": 118,
+						"line": 153,
 						"column": 3
 					}
 				}

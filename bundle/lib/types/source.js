@@ -1,3 +1,4 @@
+import { buildFeedUrl } from "./settings.js";
 import { dedupeCandidates } from "./candidate.js";
 import { parseRssFeed } from "./rss.js";
 /** A feed that could not be retrieved. */
@@ -20,6 +21,8 @@ export function createRssSource(options) {
     const transport = options.transport ?? defaultTransport;
     const sourceId = new URL(options.feedUrl).host;
     const requestUrl = () => {
+        if (options.filters)
+            return buildFeedUrl(options.feedUrl, options.filters.kind, options.filters.settings, options.keyword);
         if (options.keyword === undefined || options.keyword.trim() === '')
             return options.feedUrl;
         const url = new URL(options.feedUrl);

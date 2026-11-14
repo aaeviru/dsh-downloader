@@ -1,3 +1,6 @@
+import { buildFeedUrl } from './settings.ts'
+import type { EffectiveSettings } from './settings.ts'
+import type { SourceKind } from './catalog.ts'
 import { dedupeCandidates } from './candidate.ts'
 import type { Candidate } from './candidate.ts'
 import { parseRssFeed } from './rss.ts'
@@ -27,6 +30,7 @@ export class FeedFetchError extends Error {
 
 /** Feed address and request deadline with optional search and transport overrides. */
 export interface RssSourceOptions {
+  readonly filters?: { readonly kind: SourceKind; readonly settings: EffectiveSettings }
   readonly feedUrl: string
   /** Feed search term; omitted keeps the address as configured. */
   readonly keyword?: string
@@ -45,6 +49,7 @@ export function createRssSource(options: RssSourceOptions): Source {
   const transport = options.transport ?? defaultTransport
   const sourceId = new URL(options.feedUrl).host
   const requestUrl = (): string => {
+    if (options.filters) return buildFeedUrl(options.feedUrl, options.filters.kind, options.filters.settings, options.keyword)
     if (options.keyword === undefined || options.keyword.trim() === '') return options.feedUrl
     const url = new URL(options.feedUrl)
     url.searchParams.set('q', options.keyword)

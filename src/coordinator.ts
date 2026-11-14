@@ -16,12 +16,13 @@ export interface Downloader {
 export interface SubmitRecord {
   readonly key: string
   readonly gid: string
+  readonly endpoint?: string
 }
 
 /** Tracks accepted submissions; every key reported by has must have a matching record in list. */
 export interface SubmitStore {
   has(key: string): boolean
-  record(key: string, gid: string): void
+  record(key: string, gid: string, endpoint?: string): void
   list(): readonly SubmitRecord[]
 }
 
@@ -51,6 +52,7 @@ export interface DownloadCoordinator {
 export function createDownloadCoordinator(deps: {
   readonly downloader: Downloader
   readonly store: SubmitStore
+  readonly endpoint?: () => string | undefined
 }): DownloadCoordinator {
   const { downloader, store } = deps
   const inFlight = new Map<string, true>()
@@ -67,7 +69,7 @@ export function createDownloadCoordinator(deps: {
     inFlight.set(key, true)
     try {
       const { gid } = await downloader.add(candidate)
-      store.record(key, gid)
+      store.record(key, gid, deps.endpoint?.())
       return { gid }
     } finally {
       inFlight.delete(key)

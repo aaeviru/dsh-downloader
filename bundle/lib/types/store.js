@@ -11,8 +11,8 @@ export async function createPersistentSubmitStore(backend) {
     return {
         has: key => records.has(key),
         list,
-        record(key, gid) {
-            records.set(key, { key, gid });
+        record(key, gid, endpoint) {
+            records.set(key, { key, gid, ...(endpoint === undefined ? {} : { endpoint }) });
             const snapshot = list();
             queue = queue.then(() => backend.save(snapshot)).catch((error) => { failures.push(error); });
         },

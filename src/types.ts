@@ -15,3 +15,17 @@ export interface PreferencesStore {
   clearHistory(): Promise<Preferences>
   flush(): Promise<void>
 }
+
+/** Shared provider and filter vocabulary. */
+export type { CategoryOption, QualityFilter, CategoryCode, SourceKind, EffectiveSettings } from './catalog.ts'
+import type { SourceKind, CategoryOption, EffectiveSettings } from './catalog.ts'
+
+/** Provider choices and the current resolved settings, without credentials. */
+export interface SettingsInfo {
+  readonly source: { readonly kind: SourceKind; readonly categories: readonly CategoryOption[] }
+  readonly effective: EffectiveSettings
+}
+/** Safe result of probing a staged endpoint without changing settings. */
+export type TestConnectionResult =
+  | { readonly ok: true; readonly version: string }
+  | { readonly ok: false; readonly reason: 'invalid' | 'auth' | 'timeout' | 'unreachable' | 'protocol' }

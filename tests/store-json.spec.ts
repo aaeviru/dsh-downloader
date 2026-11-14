@@ -12,7 +12,7 @@ it('loads missing files and atomically saves private records in a new directory'
   const path = join(directory, 'nested', 'submissions.json')
   const backend = createJsonFileSubmitStoreBackend(path)
   expect(await backend.load()).toEqual([])
-  const records = [{ key: 'key', gid: 'gid' }]
+  const records = [{ key: 'key', gid: 'gid', endpoint: 'http://host/jsonrpc' }, { key: 'legacy', gid: 'old' }]
   await backend.save(records)
   expect(await backend.load()).toEqual(records)
   await chmod(path, 0o644)
@@ -21,7 +21,7 @@ it('loads missing files and atomically saves private records in a new directory'
   if (process.platform !== 'win32') expect((await stat(path)).mode & 0o777).toBe(0o600)
 })
 
-it.each(['{', '{}', '[null]', '[1]', '[{}]', '[{"key":"k"}]', '[{"key":1,"gid":"g"}]', '[{"key":"k","gid":1}]'])('rejects invalid document %s', async (contents) => {
+it.each(['[{"key":"k","gid":"g","endpoint":42}]', '{', '{}', '[null]', '[1]', '[{}]', '[{"key":"k"}]', '[{"key":1,"gid":"g"}]', '[{"key":"k","gid":1}]'])('rejects invalid document %s', async (contents) => {
   const path = join(directory, 'submissions.json')
   await writeFile(path, contents)
   await expect(createJsonFileSubmitStoreBackend(path).load()).rejects.toThrow('expected a JSON array')
@@ -34,4 +34,16 @@ it('propagates read failures and cleans temporary files after rename failure', a
   await expect(backend.load()).rejects.toThrow()
   await expect(backend.save([])).rejects.toThrow()
   expect(await readdir(directory)).toEqual(['target'])
+})
+
+it('persists endpoint snapshots through the store and reloads legacy records', async () => {
+  const { createPersistentSubmitStore } = await import('../src/store.ts')
+  const backend = createJsonFileSubmitStoreBackend(join(directory, 'records.json'))
+  const store = await createPersistentSubmitStore(backend)
+  store.record('key', 'gid', 'http://host/jsonrpc')
+  store.record('legacy', 'old')
+  await store.flush()
+  expect((await createPersistentSubmitStore(backend)).list()).toEqual([
+    { key: 'key', gid: 'gid', endpoint: 'http://host/jsonrpc' }, { key: 'legacy', gid: 'old' },
+  ])
 })

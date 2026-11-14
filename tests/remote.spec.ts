@@ -39,6 +39,7 @@ it('registers the download namespace and delegates every method to the shared se
     },
   }
   const remote = new DownloadRemote(ctx as unknown as Context, DownloadRemote.Config({}))
+  expect((await remote.settingsInfo()).effective).toMatchObject({ qualityFilter: '2', category: '0_0' })
   expect(DownloadRemote.inject).toEqual(['typert', 'credentials'])
   expect(provide).toHaveBeenCalledWith('download', remote, undefined)
   expect(remote.typertRemote.namespace).toBe('download')
@@ -82,9 +83,58 @@ it('hands the service a keyword-scoped source factory', async () => {
     reflect: { provide: vi.fn() }, credentials: { resolve: vi.fn(async () => undefined) },
     effect(callback: () => unknown) { effects.push(Promise.resolve(callback())) },
   } as unknown as Context
-  new DownloadRemote(ctx, { endpoint: 'http://127.0.0.1:1/jsonrpc', tokenRef: 'T', timeoutMs: 1000, storePath: '/tmp/remote-spec.json', feedUrl: 'https://feeds.example.test/?page=rss' })
+  new DownloadRemote(ctx, DownloadRemote.Config({ endpoint: 'http://127.0.0.1:1/jsonrpc', tokenRef: 'T', timeoutMs: 1000, storePath: '/tmp/remote-spec.json', feedUrl: 'https://feeds.example.test/?page=rss' }))
   await Promise.all(effects)
   const deps = vi.mocked(createDownloadService).mock.calls.at(-1)?.[0]
   expect(deps?.makeSource).toBeTypeOf('function')
   expect(deps?.makeSource?.('term')).toMatchObject({ listCandidates: expect.any(Function) })
+})
+
+it('reads live settings and probes staged endpoints without mutating config or submitting', async () => {
+  vi.mocked(createPersistentSubmitStore).mockResolvedValue({ has: () => false, list: () => [], record: () => {}, flush: async () => {} })
+  const effects: Promise<unknown>[] = []
+  const resolve = vi.fn<() => Promise<{ value: string; source: string } | undefined>>(async () => ({ value: 'secret', source: 'test' }))
+  const ctx = { reflect: { provide: vi.fn() }, credentials: { resolve },
+    effect(callback: () => unknown) { effects.push(Promise.resolve(callback())) },
+  }
+  let endpoint = 'http://original/jsonrpc'
+  let qualityFilter: '0' | undefined
+  const config = { ...DownloadRemote.Config({ feedUrl: 'https://sukebei.nyaa.si/?f=1&c=2_1' }),
+    endpoint: { get: () => endpoint }, qualityFilter: { get: () => qualityFilter }, category: { get: () => '2_1' as const },
+  }
+  const remote = new DownloadRemote(ctx as Context, config)
+  await Promise.all(effects)
+  const deps = vi.mocked(createDownloadService).mock.calls.at(-1)![0]
+  expect(await remote.settingsInfo()).toMatchObject({ source: { kind: 'sukebei', categories: expect.any(Array) },
+    effective: { endpoint, qualityFilter: '1', category: '2_1' } })
+  expect(deps.currentEndpoint?.()).toBe(endpoint)
+  expect(deps.tag?.()).toBe('sukebei|1|2_1')
+  qualityFilter = '0'
+  endpoint = 'http://changed/jsonrpc'
+  expect((await remote.settingsInfo()).effective).toEqual({ endpoint, qualityFilter: '0', category: '2_1' })
+  expect(deps.tag?.()).toBe('sukebei|0|2_1')
+  const fetch = vi.fn(async (_url: string, init?: RequestInit) => {
+    if (!init?.body) return new Response('<rss><channel></channel></rss>')
+    const body = JSON.parse(String(init.body)) as { id: number }
+    return new Response(JSON.stringify({ jsonrpc: '2.0', id: body.id, result: { version: '1.36.0' } }))
+  })
+  vi.stubGlobal('fetch', fetch)
+  try {
+    expect(await remote.testConnection('http://user:secret@host/')).toEqual({ ok: false, reason: 'invalid' })
+    expect(fetch).not.toHaveBeenCalled()
+    expect(resolve).not.toHaveBeenCalled()
+    expect(await remote.testConnection(' http://staged/jsonrpc ')).toEqual({ ok: true, version: '1.36.0' })
+    expect(fetch).toHaveBeenLastCalledWith('http://staged/jsonrpc', expect.objectContaining({ body: expect.stringContaining('aria2.getVersion') }))
+    expect(config.endpoint.get()).toBe(endpoint)
+    resolve.mockResolvedValueOnce(undefined)
+    expect(await remote.testConnection(endpoint)).toEqual({ ok: true, version: '1.36.0' })
+    fetch.mockRejectedValueOnce(new Error('offline'))
+    expect(await remote.testConnection(endpoint)).toEqual({ ok: false, reason: 'protocol' })
+    await deps.source.listCandidates()
+    expect(fetch).toHaveBeenLastCalledWith('https://sukebei.nyaa.si/?f=0&c=2_1', expect.any(Object))
+    await deps.makeSource?.('term').listCandidates()
+    expect(fetch).toHaveBeenLastCalledWith('https://sukebei.nyaa.si/?f=0&c=2_1&q=term', expect.any(Object))
+    config.feedUrl = 'https://unknown.test/'
+    expect(await remote.settingsInfo()).toMatchObject({ source: { kind: 'unknown', categories: [] } })
+  } finally { vi.unstubAllGlobals() }
 })

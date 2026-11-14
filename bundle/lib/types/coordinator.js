@@ -21,7 +21,7 @@ export function createDownloadCoordinator(deps) {
         inFlight.set(key, true);
         try {
             const { gid } = await downloader.add(candidate);
-            store.record(key, gid);
+            store.record(key, gid, deps.endpoint?.());
             return { gid };
         }
         finally {
