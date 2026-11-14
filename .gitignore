@@ -7,3 +7,4 @@ coverage/
 
 .host/
 .dsh-home*/
+dist/
