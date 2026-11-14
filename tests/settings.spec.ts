@@ -37,7 +37,7 @@ it('builds single encoded q/f/c parameters and preserves unrelated parameters', 
     expect(new URL(buildFeedUrl(feed, 'sukebei', settings, keyword)).searchParams.getAll('q')).toEqual(['old'])
   }
   const nyaa = new URL(buildFeedUrl(feed, 'nyaa', settings))
-  expect(nyaa.searchParams.getAll('f')).toEqual(['1'])
+  expect(nyaa.searchParams.has('f')).toBe(false)
   expect(nyaa.searchParams.has('c')).toBe(false)
   const unknown = new URL(buildFeedUrl(feed, 'unknown', settings))
   expect(unknown.searchParams.has('f')).toBe(false)

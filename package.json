@@ -49,6 +49,7 @@
     "@deepseek-ai/dsh-typert-protocol": "workspace:*"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-client-ui-plugin-manager": "workspace:*",
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-tools": "workspace:*",
     "@deepseek-ai/schemastery": "workspace:*",

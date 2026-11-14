@@ -1135,6 +1135,308 @@ window.__ModuleLoader__.load({
 			}
 		}, zod.z);
 		//#endregion
+		//#region src/catalog.ts
+		/** Supported quality filters. */
+		const QUALITY_FILTERS = [
+			"0",
+			"1",
+			"2"
+		];
+		[
+			"0_0",
+			"1_0",
+			"1_1",
+			"1_2",
+			"1_3",
+			"1_4",
+			"1_5",
+			"2_0",
+			"2_1",
+			"2_2"
+		].map((code) => ({
+			code,
+			label: `category.${code}`
+		}));
+		//#endregion
+		//#region src/client/SettingsPage.tsx
+		/** Prefer accepted fields, falling back to the resolved legacy feed settings. */
+		function readDraft(value, info) {
+			const field = (key) => typeof value?.[key] === "string" ? value[key] : info.effective[key];
+			return {
+				endpoint: field("endpoint"),
+				qualityFilter: field("qualityFilter"),
+				category: field("category")
+			};
+		}
+		/** Configuration contributed only to the downloader's row on the Plugins page. */
+		function SettingsPage({ view, form, t, download }) {
+			const id = (0, react.useId)();
+			const [info, setInfo] = (0, react.useState)();
+			const [loadError, setLoadError] = (0, react.useState)(false);
+			const [loading, setLoading] = (0, react.useState)(true);
+			const [draft, setDraft] = (0, react.useState)({
+				endpoint: "",
+				qualityFilter: "0",
+				category: "0_0"
+			});
+			const touched = (0, react.useRef)(/* @__PURE__ */ new Set());
+			const [saving, setSaving] = (0, react.useState)(false);
+			const [testing, setTesting] = (0, react.useState)(false);
+			const [message, setMessage] = (0, react.useState)();
+			const [testMessage, setTestMessage] = (0, react.useState)();
+			const load = (0, react.useCallback)(async () => {
+				setLoading(true);
+				setLoadError(false);
+				try {
+					const result = await download.settingsInfo();
+					if (!result.ok) throw result.error;
+					setInfo(result.value);
+				} catch {
+					setLoadError(true);
+				} finally {
+					setLoading(false);
+				}
+			}, [download]);
+			(0, react.useEffect)(() => {
+				load();
+			}, [load]);
+			(0, react.useEffect)(() => {
+				if (info && touched.current.size === 0) setDraft(readDraft(form?.state.value, info));
+			}, [form?.state.value, info]);
+			const valid = /^https?:\/\/[^@/?#\s]+(?:\/[^\s]*)?$/.test(draft.endpoint);
+			const editable = form?.state.status === "ready" && form.state.writable;
+			function change(field, value) {
+				touched.current.add(field);
+				setDraft((previous) => ({
+					...previous,
+					[field]: value
+				}));
+				setMessage(void 0);
+				setTestMessage(void 0);
+			}
+			async function save() {
+				if (!form || !editable || saving || !valid || touched.current.size === 0) return;
+				const ops = [...touched.current].map((field) => ({
+					op: "set",
+					path: [field],
+					value: draft[field]
+				}));
+				setSaving(true);
+				try {
+					if (await form.mutate(ops, form.state.revision)) {
+						touched.current.clear();
+						setMessage({
+							text: t("saved"),
+							error: false
+						});
+						await load();
+					} else setMessage({
+						text: t("saveFailed"),
+						error: true
+					});
+				} catch {
+					setMessage({
+						text: t("saveFailed"),
+						error: true
+					});
+				} finally {
+					setSaving(false);
+				}
+			}
+			async function test() {
+				if (testing || !valid) return;
+				setTesting(true);
+				setTestMessage(void 0);
+				try {
+					const result = await download.testConnection(draft.endpoint);
+					if (!result.ok) throw result.error;
+					const value = result.value;
+					setTestMessage({
+						text: value.ok ? t("testSucceeded").replace("{version}", value.version) : t({
+							invalid: "invalidEndpoint",
+							auth: "testAuth",
+							timeout: "testTimeout",
+							unreachable: "testUnreachable",
+							protocol: "testProtocol"
+						}[value.reason]),
+						error: !value.ok
+					});
+				} catch {
+					setTestMessage({
+						text: t("testUnreachable"),
+						error: true
+					});
+				} finally {
+					setTesting(false);
+				}
+			}
+			if (view === "summary") {
+				if (!info || loading || loadError) return null;
+				const current = readDraft(form?.state.value, info);
+				let host = current.endpoint;
+				try {
+					host = new URL(current.endpoint).host;
+				} catch {}
+				const category = info.source.categories.find((option) => option.code === current.category);
+				return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+					host,
+					" · ",
+					t(`filter${current.qualityFilter}`),
+					" · ",
+					category ? t(category.label) : current.category
+				] });
+			}
+			if (!form || form.state.status === "unavailable") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				role: "status",
+				children: t("settingsUnavailable")
+			});
+			if (form.state.status === "loading" || !info && loading) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				role: "status",
+				children: t("settingsLoading")
+			});
+			if (!info || loadError) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				role: "alert",
+				children: [
+					t("settingsUnavailable"),
+					" ",
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						disabled: loading,
+						onClick: () => {
+							load();
+						},
+						children: t("retry")
+					})
+				]
+			});
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+				style: {
+					padding: 24,
+					color: "var(--dsw-alias-label-primary)",
+					background: "var(--dsw-alias-bg-base)"
+				},
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", { children: t("settings") }),
+					!form.state.writable && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						role: "status",
+						children: t("settingsReadOnly")
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						style: {
+							display: "grid",
+							gap: 8
+						},
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								htmlFor: `${id}-filter`,
+								children: t("uploadFilter")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
+								id: `${id}-filter`,
+								value: draft.qualityFilter,
+								disabled: !editable || saving || info.source.kind !== "sukebei",
+								onChange: (event) => {
+									change("qualityFilter", event.target.value);
+								},
+								children: QUALITY_FILTERS.map((filter) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: filter,
+									children: t(`filter${filter}`)
+								}, filter))
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								htmlFor: `${id}-category`,
+								children: t("category")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
+								id: `${id}-category`,
+								value: draft.category,
+								disabled: !editable || saving || info.source.kind !== "sukebei",
+								onChange: (event) => {
+									change("category", event.target.value);
+								},
+								children: info.source.categories.map((option) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: option.code,
+									children: t(option.label)
+								}, option.code))
+							}),
+							info.source.kind !== "sukebei" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								role: "status",
+								children: t("sourceUnsupported")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
+								htmlFor: `${id}-endpoint`,
+								children: t("endpoint")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+								id: `${id}-endpoint`,
+								type: "text",
+								value: draft.endpoint,
+								disabled: !editable || saving || testing,
+								"aria-invalid": !valid,
+								"aria-describedby": `${id}-hint${valid ? "" : ` ${id}-invalid`}`,
+								onChange: (event) => {
+									change("endpoint", event.target.value);
+								}
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								id: `${id}-hint`,
+								style: { color: "var(--dsw-alias-label-secondary)" },
+								children: t("endpointHelp")
+							}),
+							!valid && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								id: `${id}-invalid`,
+								role: "alert",
+								children: t("invalidEndpoint")
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						style: {
+							display: "flex",
+							gap: 8
+						},
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								disabled: testing || !valid,
+								onClick: () => {
+									test();
+								},
+								children: t(testing ? "testing" : "testConnection")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								disabled: !editable || saving || touched.current.size === 0 || !valid,
+								onClick: () => {
+									save();
+								},
+								children: t(saving ? "saving" : "save")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								disabled: saving || testing,
+								onClick: () => {
+									touched.current.clear();
+									setDraft(readDraft(form.state.value, info));
+									setMessage(void 0);
+									setTestMessage(void 0);
+								},
+								children: t("cancel")
+							})
+						]
+					}),
+					message && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						role: message.error ? "alert" : "status",
+						children: message.text
+					}),
+					testMessage && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						role: testMessage.error ? "alert" : "status",
+						children: testMessage.text
+					})
+				]
+			});
+		}
+		//#endregion
 		//#region src/client/DownloaderPanel.tsx
 		/** Render a publication instant as a Japan-time calendar date. */
 		function formatPublished(publishedAt) {
@@ -1677,6 +1979,43 @@ window.__ModuleLoader__.load({
 		const NS = "downloader";
 		/** English panel copy. */
 		const en = {
+			settings: "Settings",
+			settingsSummary: "aria2, filters and category",
+			settingsUnavailable: "Settings are unavailable for this plugin.",
+			settingsLoading: "Loading settings…",
+			settingsReadOnly: "This profile does not accept settings changes.",
+			uploadFilter: "Upload filter",
+			filter0: "No filter",
+			filter1: "No remakes",
+			filter2: "Trusted only",
+			category: "Category",
+			endpoint: "aria2 endpoint",
+			endpointHelp: "Full http(s) JSON-RPC URL, for example http://10.0.0.7:8082/jsonrpc.",
+			invalidEndpoint: "Enter a full http(s) URL without credentials.",
+			testConnection: "Test connection",
+			testing: "Testing…",
+			testSucceeded: "Connected. aria2 {version}.",
+			testAuth: "Authentication failed. Check the credential reference.",
+			testTimeout: "Timed out.",
+			testUnreachable: "Cannot reach the aria2 server.",
+			testProtocol: "The server did not answer the aria2 protocol.",
+			save: "Save",
+			saving: "Saving…",
+			cancel: "Cancel",
+			saved: "Settings saved.",
+			saveFailed: "Could not save settings. Review the values and retry.",
+			saveConflict: "Settings changed elsewhere. Review the reloaded values and retry.",
+			sourceUnsupported: "This feed is not Sukebei; upload filter and category settings are disabled.",
+			"category.0_0": "All",
+			"category.1_0": "Art — all",
+			"category.1_1": "Art — Anime",
+			"category.1_2": "Art — Doujinshi",
+			"category.1_3": "Art — Games",
+			"category.1_4": "Art — Manga",
+			"category.1_5": "Art — Pictures",
+			"category.2_0": "Real Life — all",
+			"category.2_1": "Real Life — Photobooks",
+			"category.2_2": "Real Life — Videos",
 			savedSearches: "Saved searches",
 			favorites: "Favorites",
 			recent: "Recent searches",
@@ -1712,6 +2051,43 @@ window.__ModuleLoader__.load({
 		};
 		/** Chinese panel copy. */
 		const zh = {
+			settings: "设置",
+			settingsSummary: "aria2、上传筛选和分类",
+			settingsUnavailable: "此插件的设置不可用。",
+			settingsLoading: "正在加载设置…",
+			settingsReadOnly: "当前配置不允许修改设置。",
+			uploadFilter: "上传筛选",
+			filter0: "不筛选",
+			filter1: "排除重制版",
+			filter2: "仅可信上传",
+			category: "分类",
+			endpoint: "aria2 端点",
+			endpointHelp: "完整的 http(s) JSON-RPC 地址，例如 http://10.0.0.7:8082/jsonrpc。",
+			invalidEndpoint: "请输入不含凭据的完整 http(s) 地址。",
+			testConnection: "测试连接",
+			testing: "正在测试…",
+			testSucceeded: "连接成功。aria2 {version}。",
+			testAuth: "认证失败，请检查凭据引用。",
+			testTimeout: "连接超时。",
+			testUnreachable: "无法连接到 aria2 服务器。",
+			testProtocol: "服务器未按 aria2 协议响应。",
+			save: "保存",
+			saving: "正在保存…",
+			cancel: "取消",
+			saved: "设置已保存。",
+			saveFailed: "无法保存设置，请检查后重试。",
+			saveConflict: "设置已在其他位置更改，请检查重新加载的值后重试。",
+			sourceUnsupported: "此订阅源不是 Sukebei，上传筛选和分类设置不可用。",
+			"category.0_0": "全部",
+			"category.1_0": "二次元 — 全部",
+			"category.1_1": "二次元 — 动画",
+			"category.1_2": "二次元 — 同人志",
+			"category.1_3": "二次元 — 游戏",
+			"category.1_4": "二次元 — 漫画",
+			"category.1_5": "二次元 — 图片",
+			"category.2_0": "真人 — 全部",
+			"category.2_1": "真人 — 写真集",
+			"category.2_2": "真人 — 视频",
 			savedSearches: "已保存的搜索",
 			favorites: "收藏",
 			recent: "最近搜索",
@@ -1774,6 +2150,16 @@ window.__ModuleLoader__.load({
 				locale: NS,
 				label: () => t("panel")
 			}, DownloaderIcon));
+			const ROW_KEY = "@deepseek-ai/dsh-experimental-downloader#downloader";
+			ctx.slots.inject("plugins.row.config", () => ctx.slots.register({
+				name: "plugins.row.config",
+				key: ROW_KEY,
+				locale: NS,
+				inject: () => ({
+					t,
+					download
+				})
+			}, SettingsPage));
 		}
 		//#endregion
 		//#region src/client/index.ts

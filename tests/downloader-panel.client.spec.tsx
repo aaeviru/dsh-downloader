@@ -23,6 +23,7 @@ const namespace = (list: DownloadNamespace['list'], add?: DownloadNamespace['add
   toggleFavorite: async () => ({ ok: true, value: { history: [], favorites: [] } }),
   deleteSearch: async () => ({ ok: true, value: { history: [], favorites: [] } }),
   clearHistory: async () => ({ ok: true, value: { history: [], favorites: [] } }),
+  settingsInfo: vi.fn(), testConnection: vi.fn(),
   list,
   submissions: async () => ({ ok: true, value: [] }),
   resubmit: vi.fn(),

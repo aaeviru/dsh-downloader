@@ -10,12 +10,12 @@ import type { DownloadNamespace } from '../src/client/namespace.ts'
 afterEach(cleanup)
 it('registers localized seats with disposers and renders both icon states', () => {
   const dispose = vi.fn()
-  const registrations: { label?: () => string; inject?: () => object }[] = []
+  const registrations: { name: string; key?: string; label?: () => string; inject?: () => object }[] = []
   const ctx: Context = Object.assign(new Context(), {
     locale: { register: vi.fn(() => dispose), bind: () => (key: keyof typeof en) => en[key] },
     slots: {
       inject: (_name: string, callback: () => void) => callback(),
-      register: (options: { label?: () => string; inject?: () => object }) => { registrations.push(options); return dispose },
+      register: (options: { name: string; key?: string; label?: () => string; inject?: () => object }) => { registrations.push(options); return dispose },
     },
     effect: (callback: () => () => void) => callback(),
   })
@@ -24,12 +24,16 @@ it('registers localized seats with disposers and renders both icon states', () =
     preferences: async () => ({ ok: true, value }), recordSearch: async () => ({ ok: true, value }),
     toggleFavorite: async () => ({ ok: true, value }), deleteSearch: async () => ({ ok: true, value }), clearHistory: async () => ({ ok: true, value }),
     list: async () => ({ ok: true, value: [] }), search: async () => ({ ok: true, value: [] }), submissions: async () => ({ ok: true, value: [] }),
+    settingsInfo: vi.fn(), testConnection: vi.fn(),
     add: vi.fn(), resubmit: vi.fn(), refresh: vi.fn(),
   }
   mountDownloader(ctx, download)
   expect(ctx.locale.register).toHaveBeenCalledWith('downloader', { en, zh })
-  expect(registrations[0]?.inject?.()).toMatchObject({ download })
-  expect(registrations[1]?.label?.()).toBe(en.panel)
+  expect(registrations).toHaveLength(3)
+  expect(registrations.find(entry => entry.name === 'plugins.row.config')).toMatchObject({ key: '@deepseek-ai/dsh-experimental-downloader#downloader' })
+  expect(registrations.find(entry => entry.name === 'plugins.row.config')?.inject?.()).toMatchObject({ download })
+  expect(registrations.find(entry => entry.name === 'main')?.inject?.()).toMatchObject({ download })
+  expect(registrations.find(entry => entry.name === 'sidebar.panellist')?.label?.()).toBe(en.panel)
   const view = render(<DownloaderIcon active={false} size={24} />)
   expect(view.container.querySelector('svg')?.style.color).toContain('secondary')
   view.rerender(<DownloaderIcon active size={24} />)

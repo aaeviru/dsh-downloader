@@ -194,8 +194,8 @@ function buildFeedUrl(feedUrl, kind, settings, keyword) {
 	const url = new URL(feedUrl);
 	const query = keyword !== void 0 && keyword.trim() !== "" ? keyword : url.searchParams.get("q");
 	if (query !== null) url.searchParams.set("q", query);
-	if (kind === "unknown") url.searchParams.delete("f");
-	else url.searchParams.set("f", settings.qualityFilter);
+	if (kind === "sukebei") url.searchParams.set("f", settings.qualityFilter);
+	else url.searchParams.delete("f");
 	if (kind === "sukebei") url.searchParams.set("c", settings.category);
 	else url.searchParams.delete("c");
 	return url.toString();

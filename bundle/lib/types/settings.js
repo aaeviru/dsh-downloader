@@ -43,10 +43,10 @@ export function buildFeedUrl(feedUrl, kind, settings, keyword) {
     const query = keyword !== undefined && keyword.trim() !== '' ? keyword : url.searchParams.get('q');
     if (query !== null)
         url.searchParams.set('q', query);
-    if (kind === 'unknown')
-        url.searchParams.delete('f');
-    else
+    if (kind === 'sukebei')
         url.searchParams.set('f', settings.qualityFilter);
+    else
+        url.searchParams.delete('f');
     if (kind === 'sukebei')
         url.searchParams.set('c', settings.category);
     else

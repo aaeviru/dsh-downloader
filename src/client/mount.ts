@@ -1,3 +1,5 @@
+import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
+import { SettingsPage } from './SettingsPage.tsx'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
@@ -22,4 +24,8 @@ export function mountDownloader(ctx: Context, download: DownloadNamespace): void
   ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
     name: 'sidebar.panellist', id: 'downloader', order: 40, locale: NS, label: () => t('panel'),
   }, DownloaderIcon))
+  const ROW_KEY = '@deepseek-ai/dsh-experimental-downloader#downloader'
+  ctx.slots.inject('plugins.row.config', () => ctx.slots.register({
+    name: 'plugins.row.config', key: ROW_KEY, locale: NS, inject: () => ({ t, download }),
+  }, SettingsPage))
 }

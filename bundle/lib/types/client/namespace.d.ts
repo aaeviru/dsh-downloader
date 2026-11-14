@@ -1,8 +1,10 @@
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol';
-import type { Preferences, Candidate, RefreshResult, SubmitRecord, SubmitResult } from '../types.ts';
+import type { SettingsInfo, TestConnectionResult, Preferences, Candidate, RefreshResult, SubmitRecord, SubmitResult } from '../types.ts';
 export type { SubmitResult } from '../types.ts';
 /** Browser operations consumed by the downloader panel. */
 export interface DownloadNamespace {
+    settingsInfo: () => Promise<RemoteResult<SettingsInfo>>;
+    testConnection: (endpoint: string) => Promise<RemoteResult<TestConnectionResult>>;
     preferences: () => Promise<RemoteResult<Preferences>>;
     recordSearch: (keyword: string) => Promise<RemoteResult<Preferences>>;
     toggleFavorite: (keyword: string) => Promise<RemoteResult<Preferences>>;

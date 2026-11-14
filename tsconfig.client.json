@@ -15,6 +15,9 @@
   ],
   "references": [
     {
+      "path": "/home/aaevi/projects/deepseek-harness/packages/client/ui-plugin-manager/tsconfig.client.json"
+    },
+    {
       "path": "/home/aaevi/projects/deepseek-harness/vendor/cordis"
     },
     {
